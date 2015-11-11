@@ -299,7 +299,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             disp('Motion correction check: Starting motioncorrect/SP.py in:');
         if exist([preprocessPath '/motioncorrect_SP.py'],'file')==2
             cd(preprocessPath); %if you have the file for updated motion correction, use it
-            disp('Updated motion correction file found and will be used.');
+            disp('Updated motion correction file found will be used.');
             disp('This will align all epi files to the middle volume of the middle epi.');
             disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
             beep; pause;
@@ -307,7 +307,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             success = system(['python motioncorrect_SP.py ', subject_folderMocoCheck]); 
         else 
             cd(preprocessPath); %otherwise use old version to align to epi01
-            disp('Old motion correction file found and will be used.');
+            disp('Old motion correction file found in megavista/silverlab_vista_tools/python_preproc will be used.');
             disp('This will align all epi files to the first volume of the first epi.');
             disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
             beep; pause;
@@ -404,7 +404,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                  end
         
             % FIX HEADERS
-                 beep; answer = input('Have you edited niftiFixHeader3 for your needs? (y)es/(n)o: ','s');
+                 beep; answer = input('Have you edited niftiFixHeader2 for your needs? (y)es/(n)o: ','s');
                  if strcmpi(answer,'n'); error('Please proceed and edit the code before fixing headers...');end
             doFixHeaders = 1; %default
             %check whether code was already run successfully or not
@@ -427,7 +427,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 end
             if doFixHeaders == 1
                  disp('Fixing headers')
-                    niftiFixHeader3(subject_folderNiftiFx);
+                    niftiFixHeader2(subject_folderNiftiFx);
                     if exist('epiHeaders_FIXED.txt','file')==2
                         disp('Header fixing was successful.')
                     else
@@ -476,7 +476,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 kb_initializeVista2(subject_folderVista, subjectID)
            disp('Lets check that...') %the success of initialization
                 cd(subject_folderVista);
-                if exist('mrSESSION.mat','file')==2 && exist('mrSESSION_backup.mat','file')==2 && exist('mrInit_params.mat','file')==2 
+                if exist('mrSESSION.mat','file')==2 && exist('mrSESSION_backup.mat','file')==2 && exist('mrInit2_params.mat','file')==2 &&...
+                        exist('Inplane','dir')==7 && exist('Inplane/anat.mat','file')==2 
                     disp('Success confirmed')
                 else
                     error('Some files/folders are missing')
