@@ -192,6 +192,19 @@ elseif answer==2 %I do want to set up for mrGray
 else
     error('Escaping...');
 end
+disp('--------     Final step     - nifti header fix  --------------------------')
+disp('Would you like to proceed or skip this correction')
+disp('1. Proceed')
+doFix = str2double(input('2. Skip  ', 's'));
+if doFix == 1
+    disp('Fixing...')
+    niftiFixHeader3(destinationFolder);
+elseif doFix==2 
+    disp('Skipping - be aware that nifti header fix did not occur for your segmentation/anatomical files')
+else
+    error('Answer not understood...')
+end
+    
 disp(' ---------------------------------------------------------------------------------------------')
 
 disp(' ------------------ AUTO SEGMENTATION PIPELINE FINISHED ------------------------------------------------------------ ');

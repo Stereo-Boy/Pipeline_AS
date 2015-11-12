@@ -32,7 +32,7 @@ end
 destinationFolder = [mrVistaFolder '/Segmentation'];
 
 %if exist('mrRxSettings.mat','file')==2
-disp('--------      ');
+disp('--------      WHITE MATTER SEGMENTATION PIPELINE              --------');
 %     disp(' ');
 % else
 %     error('mrRxSettings.mat file not found.  Please align high-res and low-res anatomicals before continuing.');
@@ -192,6 +192,11 @@ elseif answer==2 %I do want to set up for mrGray
 else
     error('Escaping...');
 end
+disp('--------     Final step     - nifti header fix  --------------------------')
+disp('Would you like to proceed or skip this correction')
+disp(
+answer = str2double(input('3. Escape ', 's'));
+
 disp(' ---------------------------------------------------------------------------------------------')
 
 disp(' ------------------ AUTO SEGMENTATION PIPELINE FINISHED ------------------------------------------------------------ ');

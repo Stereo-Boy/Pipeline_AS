@@ -44,7 +44,7 @@ if numel(niiFileList)>0
     for j=1:numel(niiFileList)
         ni = readFileNifti(niiFileList{j});
        % if ismember(ni.descrip,{'GEMS_stam','epi_stam'})
-       if strcmp(ni.fname(1:3),'epi') || strcmp(ni.fname(1:4),'gems')
+       if numel(ni.fname)>3 && strcmp(ni.fname(1:3),'epi') || strcmp(ni.fname(1:4),'gems')
             ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
             ni.sform = 1; %you could decide differently
             %However, if method 2 was used on your nifti conversion, you will get
@@ -58,18 +58,16 @@ if numel(niiFileList)>0
                 TR = ni.pixdim(4);
             else %GEMS
                 TR = 0; %to be safe, given the error with mprage (but we are not sure this is actually correcting an error for gems)
+                %ni.dim(4) = 1; %to avoid a warning
+                %ni.pixdim(4) = 1; %to avoid a warning
             end
             disp(['Check that your TR is: ',num2str(TR), ' sec'])
             ni.slice_duration = TR/(ni.slice_end+1); %(TR/#slices)
-            if ni.sform==1
-                ni.qto_xyz = ni.sto_xyz; 
-            else
-                ni.sto_xyz = ni.qto_xyz; 
-            end
+            ni = niftiCheckQto(ni);
             writeFileNifti(ni);
             disp(['EPI or GEMS file ', niiFileList{j},' is fixed'])
             checkNifti(niiFileList{j})
-       elseif strcmp(ni.fname(1:6),'mprage') || strcmp(ni.fname(end-18:end),'_nu_RAS_NoRS.nii.gz') %MPRAGE
+       elseif (numel(ni.fname)>5 && strcmp(ni.fname(1:6),'mprage')) %initial mprage
             ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
             ni.sform = 1; %you could decide differently
             %However, if method 2 was used on your nifti conversion, you will get
@@ -78,13 +76,29 @@ if numel(niiFileList)>0
             ni.freq_dim = 1; 
             ni.phase_dim = 2;
             ni.slice_dim = 3;
-            ni.slice_end = 255; %(number of slices-1)
+            ni.slice_end = 159; %(number of slices-1) 
             ni.slice_duration = 0; % it has to be 0 to avoid slice timing correction and some further error
-            if ni.sform==1
-                ni.qto_xyz = ni.sto_xyz; 
-            else
-                ni.sto_xyz = ni.qto_xyz; 
-            end
+            %ni.dim(4) = 1; %to avoid a warning
+            %ni.pixdim(4) = 1; %to avoid a warning
+            ni = niftiCheckQto(ni);
+            writeFileNifti(ni);
+            disp(['MPRAGE file ', niiFileList{j},' is fixed'])
+            checkNifti(niiFileList{j})
+       elseif (numel(ni.fname)>18 && strcmp(ni.fname(end-18:end),'_nu_RAS_NoRS.nii.gz'))||...
+               (numel(ni.fname)>7 && strcmp(ni.fname(1:8),'t1_class')) %MPRAGE
+            ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
+            ni.sform = 1; %you could decide differently
+            %However, if method 2 was used on your nifti conversion, you will get
+            %an error when you force method 3 here in nifti header because it will copy
+            %below the null sto_xyz to the qto_xyz
+            ni.freq_dim = 1; 
+            ni.phase_dim = 2;
+            ni.slice_dim = 3;
+            ni.slice_end = 255; %(number of slices-1) after conversion to isotropic conformed space which is 256^3
+            ni.slice_duration = 0; % it has to be 0 to avoid slice timing correction and some further error
+            %ni.dim(4) = 1; %to avoid a warning
+            %ni.pixdim(4) = 1; %to avoid a warning
+            ni = niftiCheckQto(ni);
             writeFileNifti(ni);
             disp(['MPRAGE file ', niiFileList{j},' is fixed'])
             checkNifti(niiFileList{j})
