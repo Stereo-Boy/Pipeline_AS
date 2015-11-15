@@ -96,7 +96,8 @@ beep;
 disp('Do you want to set up files for')
 disp('1. itkGray')
 disp('2. mrGray')
-answer = str2double(input('3. Escape ', 's'));
+disp('3. Skip')
+answer = str2double(input('4. Escape ', 's'));
 disp(' ');
 if answer==1 %I want to set up for itkGray
     disp('Starting fs_ribbon2itk to convert nifti file to itkGray class file')
@@ -189,23 +190,49 @@ elseif answer==2 %I do want to set up for mrGray
         end
         close all %closing any figures that 
         
-else
+elseif answer==3
+        disp('Skipping')
+elseif answer==4
     error('Escaping...');
+else
+    error('Answer not understood')
 end
-disp('--------     Final step     - nifti header fix  --------------------------')
-disp('Would you like to proceed or skip this correction')
-disp('1. Proceed')
-doFix = str2double(input('2. Skip  ', 's'));
+disp(' ---------------------------------------------------------------------------------------------')
+disp('--------     nifti header fix  --------------------------')
+niftiFixFolder = [mrVistaFolder '/Segmentation_niftiFixed'];
+if exist('niftiFixFolder','dir')==7
+    disp('Segmentation_niftiFixed folder found: fix was probably done.')
+    disp('Would you like to proceed (redo) or skip this correction')
+    disp('1. Proceed')
+    doFix = str2double(input('2. Skip  ', 's'));
+else
+    doFix=1;
+    disp('Creating Segmentation_niftiFixed folder') 
+    [success, status]=mkdir(niftiFixFolder); if success; disp('Done');else error(status); end
+    disp('Copying file to the folder')
+    [success, status]=copyfile([destinationFolder,'/t1_class_edited.nii.gz'],niftiFixFolder); if success; disp('Done');else error(status); end
+    [success, status]=copyfile([destinationFolder,'/MV40_nu_RAS_NoRS.nii.gz'],niftiFixFolder); if success; disp('Done');else error(status); end
+end
 if doFix == 1
     disp('Fixing...')
-    niftiFixHeader3(destinationFolder);
+    niftiFixHeader3(niftiFixFolder);
 elseif doFix==2 
     disp('Skipping - be aware that nifti header fix did not occur for your segmentation/anatomical files')
 else
     error('Answer not understood...')
 end
-    
-disp(' ---------------------------------------------------------------------------------------------')
 
+disp('--------  Installing volume Anatomy       --------')
+    cd(niftiFixFolder);
+    files=dir('*_nu_RAS_NoRS.nii.gz');
+    vAnatFile = [niftiFixFolder,'/',files.name];
+    if exist(vAnatFile,'file')==2
+        disp('Linking vAnatomy')
+        vPath = setVAnatomyPath(vAnatFile);
+        disp('Linked to:')
+        disp(vPath)
+    else
+        disp(['File _nu_RAS_NoRS.nii.gz does not exist']);
+    end
 disp(' ------------------ AUTO SEGMENTATION PIPELINE FINISHED ------------------------------------------------------------ ');
 
