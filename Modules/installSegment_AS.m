@@ -34,7 +34,7 @@ disp('query'); disp(query);
 disp('keepAllNodes'); disp(keepAllNodes);
 disp('classificationPath'); disp(classificationPath);
 disp('numGrayLayers'); disp(numGrayLayers);
-
+disp('Press a key')
 pause
 cd(sessionPath)
 % install segmentation
