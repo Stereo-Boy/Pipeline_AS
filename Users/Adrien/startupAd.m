@@ -22,7 +22,7 @@ disp('Randomizing randomness')
 
 % VISTASOFT AND CO - Here, we give the choice between loading vsitasoft 2011 or vistasoft 2015
 disp('[vistaPathStart] Which vistasoft toolbox would you like to use?')
-disp('1. the 2011 version (megavista)')
+disp('1. the 2011 version (megavista - for compatibility)')
 version = str2double(input('2. the 2015 version (Pipeline_AS)  ','s'));
 
 %Add Freesurfer path to the path
@@ -50,12 +50,10 @@ setenv('PERL5LIB', '/Applications/freesurfer/mni/Library/Perl/Updates/5.10.0');
 %quick sanity checks
     spmPath = '~/Desktop/spm12';
     knkPath = '~/Desktop/KNK';
-    segmPath = '~/Desktop/Segmentation';
     mricron = '~/Desktop/mricron';
     
     if (exist(spmPath,'dir') ~= 7); error('Startup - spm does not exist'); end
     if (exist(knkPath,'dir') ~= 7); error('Startup - KNK does not exist'); end
-    if (exist(segmPath,'dir') ~= 7); error('Startup - segmentation folder does not exist'); end
     if (exist(mricron,'dir') ~= 7); error('Startup - mricron does not exist'); end
     
 %Add spm files to the path
@@ -65,10 +63,6 @@ disp('Loaded path to spm files on top.')
 %Add KNK files to the path (only required if you use the Winawer lab procedure for fine alignment)
 path(genpath(knkPath),path);
 disp('Loaded path to KNK files on top.')
-
-%Add segmentation files to the path
-path(segmPath, path);
-disp('Loaded path to segmentation files on top.')
 
 %Add MRIcron to the path
 path(mricron, path);
@@ -85,8 +79,8 @@ if version == 1
     disp('Loading personal megavista path on top (zUser/Adrien).')
     path(genpath('~/Desktop/Megavista/zUsers/Adrien/'), path);
 elseif version == 2 %the 2015 version Pipeline_AS
-    vistasoftPath='~/Desktop/vistasoft/';
     pipelinePath='~/Desktop/Pipeline_AS/';
+    vistasoftPath=[pipelinePath,'/vistasoft/'];
     persoPath = [pipelinePath, '/Users/Adrien/'];
     
     %quick sanity checks
@@ -101,13 +95,13 @@ elseif version == 2 %the 2015 version Pipeline_AS
     path(genpath([pipelinePath, '/Tools/']), path);
     path(genpath([pipelinePath, '/Modules/']), path);
     path(genpath([pipelinePath, '/Functions/']), path);
-    disp('Loading personal path first (Adrien) on top')
+    disp(['Loading personal path first on top: ', persoPath])
     path(genpath(persoPath), path);
 else
     error('Input not understood - please reload vistaPathStart.m')
 end
 
-clear version fsmatlab fsfasttoolbox fsfasthome fsPerl fsSubjects fshome fsSubjects
+clear version fsmatlab fsfasttoolbox fsfasthome fsPerl fsSubjects fshome fsSubjects persoPath pipelinePath vistasoftPath knkPath mricron
 % %Add Freesurfer path to the path
 % setenv('FREESURFER_HOME', '/Applications/freesurfer')
 % fshome = getenv('FREESURFER_HOME');
