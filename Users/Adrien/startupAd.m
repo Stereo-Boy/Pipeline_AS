@@ -1,5 +1,5 @@
 restoredefaultpath
-cd ~/Desktop/
+cd ~/Desktop
 %randomizing internal state for randomness for rand and randn?
 rng('shuffle');
 disp('Randomizing randomness')
@@ -15,15 +15,17 @@ disp('Randomizing randomness')
  path(path,genpath('/Users/adrienchopin/Desktop/google drive/recherches partiel/2014_STaM_Stereo_Training_and_MRI/JST - Jian Stereo Training/'))
  path(path,genpath('/Users/adrienchopin/Desktop/google drive/recherches partiel/2014_STaM_Stereo_Training_and_MRI/ERDS - Eyetracked Random Dot Stereotest/'))
  disp('Loaded path to your experiments: STAM - fMRI / JST / ERDS')
- functionPath = genpath('~/Desktop/google drive/fonctions_MATLAB/');
+ functionPath = genpath('~/Desktop/google drive/fonctions_MATLAB');
  path(path, functionPath);
  disp('Loaded path to your personal libraries.')
  clear all
 
 % VISTASOFT AND CO - Here, we give the choice between loading vsitasoft 2011 or vistasoft 2015
 disp('[vistaPathStart] Which vistasoft toolbox would you like to use?')
-disp('1. the 2011 version (megavista - for compatibility)')
-version = str2double(input('2. the 2015 version (Pipeline_AS)  ','s'));
+%disp('1. the 2011 version (megavista - for compatibility)')
+%version = str2double(input('2. the 2015 version (Pipeline_AS)  ','s'));
+disp('Skip input for vistasoft version and default to the 2015 version for Pipeline_AS')
+version =2;
 
 %Add Freesurfer path to the path
 fshome = '/Applications/freesurfer';
@@ -75,13 +77,13 @@ if version == 1
     path(genpath('~/Desktop/Megavista/silverlab_vista_tools'), path);
     disp('You are using vistasoft 2011 (Megavista)')
     disp('Loading Sara''s path on top.')
-    path(genpath('~/Desktop/Megavista/zUsers/Sara/'), path);
+    path(genpath('~/Desktop/Megavista/zUsers/Sara'), path);
     disp('Loading personal megavista path on top (zUser/Adrien).')
-    path(genpath('~/Desktop/Megavista/zUsers/Adrien/'), path);
+    path(genpath('~/Desktop/Megavista/zUsers/Adrien'), path);
 elseif version == 2 %the 2015 version Pipeline_AS
-    pipelinePath='~/Desktop/Pipeline_AS/';
-    vistasoftPath=[pipelinePath,'/vistasoft/'];
-    persoPath = [pipelinePath, '/Users/Adrien/'];
+    pipelinePath='~/Desktop/Pipeline_AS';
+    vistasoftPath=[pipelinePath,'/vistasoft'];
+    persoPath = [pipelinePath, '/Users/Adrien'];
     
     %quick sanity checks
     if (exist(vistasoftPath,'dir') ~= 7); error('Startup - vistasoft does not exist'); end
@@ -91,10 +93,10 @@ elseif version == 2 %the 2015 version Pipeline_AS
     path(genpath(vistasoftPath), path);
     disp('You are using vistasoft 2015')
     disp('Loading Fixes, Tools, Functions and Modules folders from Pipeline_AS on top')
-    path(genpath([pipelinePath, '/Fixes/']), path);
-    path(genpath([pipelinePath, '/Tools/']), path);
-    path(genpath([pipelinePath, '/Modules/']), path);
-    path(genpath([pipelinePath, '/Functions/']), path);
+    path(genpath([pipelinePath, '/Fixes']), path);
+    path(genpath([pipelinePath, '/Tools']), path);
+    path(genpath([pipelinePath, '/Modules']), path);
+    path(genpath([pipelinePath, '/Functions']), path);
     disp(['Loading personal path first on top: ', persoPath])
     path(genpath(persoPath), path);
 else

@@ -1,6 +1,6 @@
 function extractPARfile2(stamFile,rootEpi)
 %CORRECT VERSION for Adrien
-%this version write unique PAR files for multiple predictors
+%this version writes unique PAR files for multiple predictors
 %YOU NEED TO CD IN THE STAM DIRECTORY FIRST
 % stamfile is the file with the stimuli matrix
 % rootEpi is the root from which are par file names generated
@@ -55,7 +55,7 @@ disp(['Loading following stam data file: ', stamFile])
         % 2 +/- configuration correlated
         % 3 -/+ configuration anti-correlated
         % 4 +/- configuration anti-correlated
-        eventCodes = {'Fixation', '- COR', '+ COR', '- ANT', '+ ANT' } %NO slash in names
+        eventCodes = {'Fixation', 'MinusCOR', 'PlusCOR', 'MinusANT', 'PlusANT' } %NO slash in names
         colorCodes = [[0.9 0 0]; [0 0.9 0]; [0 0.45 0]; [0 0 0.9]; [0 0 0.45]];
         
     %for each run
