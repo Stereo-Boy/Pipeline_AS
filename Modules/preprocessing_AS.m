@@ -221,7 +221,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 disp('python motioncorrect/SP.py: DONE'); 
                 % CHECK PARAMS HERE
                 %Need to write voxel size to a .txt file for
-                %motionparams.py to read in for the version in zUsers/Sara
+                %motionparams_SP_advanced.py to read in
                 first_epi_file = dir([subject_folderNIFTI '/epi01*']);
                 ni = readFileNifti([subject_folderNIFTI '/' first_epi_file.name]);
                 voxel_size = ni.pixdim(1:3);
@@ -230,7 +230,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 fclose(fileID);
                 disp('Please check the motion correction results...')
                 cd(preprocessPath);
-                success = system(['python motionparams_SP.py ', subject_folderMoco]);
+                success = system(['python motionparams_SP_advanced.py ', subject_folderMoco]);
                 if success==0 %GOOD
                     disp('python motionparams/SP.py: DONE')
                     beep; answer = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
@@ -320,7 +320,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 disp('Please check the motion correction results...')
                 [success, status] = copyfile([subject_folderMoco '/voxelinfo.txt'],[subject_folderMocoCheck '/' mocoCheckFolder '_nifti/voxelinfo.txt']);
                 if success; disp('voelinfo.txt file copied...');else error(status); end
-                success = system(['python motionparams_SP.py ', subject_folderMocoCheck]);
+                success = system(['python motionparams_SP_advanced.py ', subject_folderMocoCheck]);
                 if success==0 %GOOD
                     disp('python motionparams/SP.py: DONE')
                     beep; answer = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
