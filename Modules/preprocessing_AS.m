@@ -12,7 +12,7 @@ clc
 % REPLACE THE FOLLOWING VARIABLE WITH YOUR VALUES
 disp(' --------------   CHECKLIST BEFORE STARTING   -----------------')
 disp('- DICOM files should be in the subject folder in a folder called 01_Raw_DICOM')
-disp('- PAR files should be in the folder 01_PAR')
+disp('- PAR files should be in the folder 01_PAR (except for the retino branch)')
 disp('- Epi, in 01_Raw_DICOM, should be in folders called epi01-whatever, epi02-whatever, ....')
 disp('- Gems, in 01_Raw_DICOM, should be in folders called gems-whatever (no capital)')
 disp('- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whatever (no capital).')
@@ -60,6 +60,13 @@ subject_folderMocoCheck = [subject_folder,'/',mocoCheckFolder];
 subject_folderNiftiFx = [subject_folder,'/',niftiFixedFolder];
 subject_folderVista = [subject_folder,'/',mrVistaFolder];
 
+% Retino/normal scan branches
+disp('For convenience, the pipeline allows you to have two different branches, one run for normal scans, and one for retinotopy scans. Which one do you want')
+disp('1. Normal scans') %retino will be 0
+disp('2. Retino scans') %retino will be 1
+beep; retino = input('Answer: ')-1;
+if retino==1; disp('Retinotopy branch'); elseif retino==0; disp('Normal branch'); else error('Response not understood...exit');end
+
 disp(['***********       STARTING PIPELINE  AT  ', dateTime,' for subjectID ', subjectID,'       *******************'])
 %check existence of folders
     disp(['Subject folder is : ', subject_folder])
@@ -76,16 +83,21 @@ disp(['***********       STARTING PIPELINE  AT  ', dateTime,' for subjectID ', s
            error('System call no1 failed') 
         end
     disp('------------------------------------------------------------------------------------------------------------------------')
-    disp('Testing whether dcm2nii is found (you should see Chris Rordens dcm2nii help below:')
+    disp('Testing whether dcm2nii is found (you should see Chris Rordens dcm2nii help below):')
         if system('dcm2nii')>0
             error('System call to dcn2nii failed') 
         end
+disp('----------- END OF STARTING CHECKS --------------------')
 
 disp(['---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (',dateTime,')         ---------------------------------------------------------'])
     %first check the existence of the two initial folders
     if exist(subject_folderDICOM,'dir')==7; disp('Raw DICOM folder in Subject folder exists'); else error('Missing Raw DICOM folder in Subject folder...'); end
-    if exist(subject_folderPAR,'dir')==7; disp('PAR folder in Subject folder exists'); else error('Missing PAR folder in Subject folder...'); end
-
+    if retino==0
+        if exist(subject_folderPAR,'dir')==7; disp('PAR folder in Subject folder exists'); else error('Missing PAR folder in Subject folder...'); end
+    else
+        disp('Retino scan branch - skipping PAR file check')
+    end
+    
     %check whether nifti conversion was already run successfully or not
     doNiftiConversion = 1; %default
     doReOrg = 1; %default
@@ -118,11 +130,18 @@ disp(['---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (',dateTime
     end
     if doNiftiConversion; 
         disp('Starting dicom2vista_org.py...'); 
-            success=system(['python dicom2vista_org.py ', subject_folderDICOM]); 
+            success=system(['python dicom2vista_org.py ', subject_folderDICOM]); %CAREFUL - this is a python 2.7 code that does not work with 3.4 syntax (check what version is run by typing system python in matlab)
             if success==0 %GOOD
                 disp('python dicom2vista_org.py: DONE'); 
             else %NOT GOOD
-                error('Something went wrong with last step')
+                disp('Something went wrong with last step')
+                disp('Assuming it did not find dicom2vista_org.py from python environment, which is the most common, we will try first to run')
+                disp(' an absolute link to that file, if we can localize it.')
+                absoPath2File=which('dicom2vista_org.py');
+                if isempty(absoPath2File)==0; disp(['We have localized it to ', absoPath2File]); end
+                disp(['python ', absoPath2File, ' ', subject_folderDICOM])
+                success=system(['python ', absoPath2File, ' ', subject_folderDICOM]);
+                if success==0; disp('Success! python dicom2vista_org.py: DONE');  else error('Failure!'); end
             end
         %check that nifti conversion was successful
         cd([subject_folderDICOM,'/',rawDICOMfolder,'_nifti']);
@@ -204,8 +223,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             disp('Enhanced motion correction file motioncorrect_SP.py found in /Tools will be used.');
             disp('This will align all epi files to the middle volume of the middle epi.');
             disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
-            disp('Starting...')
             beep; pause;
+            disp('Starting...')
             success = system(['python motioncorrect_SP.py ', subject_folderMoco]);
         else 
             cd(preprocessPath); %otherwise use old version to align to epi01
@@ -230,7 +249,16 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 fclose(fileID);
                 disp('Please check the motion correction results...')
                 cd(preprocessPath);
-                success = system(['python motionparams_SP_advanced.py ', subject_folderMoco]);
+                if retino==0 %for normal scans, we use advanced motion param calculation assuming this is a whole brain
+                    disp('Normal scan branch: we assume this is a whole brain scan - if this gives you too inacurate results, modify code here to use the retinotopy branch instead.')
+                    success = system(['python motionparams_SP_advanced.py ', subject_folderMoco]);
+                    %the code above will estimate motion parameters based
+                    %on a worse case scenario of the translation occuring
+                    %as a result of the rotations of the whole brain
+                else %retinotopy branch
+                    disp('Retino scan branch: we used a simplified code here to calculate motion parameters.')
+                    success = system(['python motionparams_SP.py ', subject_folderMoco]);
+                end
                 if success==0 %GOOD
                     disp('python motionparams/SP.py: DONE')
                     beep; answer = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
@@ -319,8 +347,17 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                    % CHECK PARAMS HERE
                 disp('Please check the motion correction results...')
                 [success, status] = copyfile([subject_folderMoco '/voxelinfo.txt'],[subject_folderMocoCheck '/' mocoCheckFolder '_nifti/voxelinfo.txt']);
-                if success; disp('voelinfo.txt file copied...');else error(status); end
-                success = system(['python motionparams_SP_advanced.py ', subject_folderMocoCheck]);
+                if success; disp('voxelinfo.txt file copied...');else error(status); end
+                if retino==0 %for normal scans, we use advanced motion param calculation assuming this is a whole brain
+                    disp('Normal scan branch: we assume this is a whole brain scan (and axial scan)- if this gives you too inacurate results, modify code here to use the retinotopy branch instead.')
+                    success = system(['python motionparams_SP_advanced.py ', subject_folderMocoCheck]);
+                    %the code above will estimate motion parameters based
+                    %on a worse case scenario of the translation occuring
+                    %as a result of the rotations of the whole brain
+                else %retinotopy branch
+                    disp('Retino scan branch: we used a simplified code here to calculate motion parameters.')
+                    success = system(['python motionparams_SP.py ', subject_folderMocoCheck]);
+                end
                 if success==0 %GOOD
                     disp('python motionparams/SP.py: DONE')
                     beep; answer = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
@@ -385,12 +422,12 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                        [success, status]=copyfile(matchGEMS{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
                 end
              disp('Renaming mprage file to mprage.nii.gz')
-                  cd(subject_folderNiftiFx);
-                 if numel(matchMPRAGE)>1
-                     error('More than one mprage file found...')
-                 else
-                     [success, status]=movefile(matchMPRAGE{1},'mprage.nii.gz'); if success; disp('Done');else error(status); end
-                 end
+                      cd(subject_folderNiftiFx);
+                     if numel(matchMPRAGE)>1
+                         error('More than one mprage file found...')
+                     else
+                         [success, status]=movefile(matchMPRAGE{1},'mprage.nii.gz'); if success; disp('Done');else error(status); end
+                     end
              disp('Renaming gems* file to gems.nii.gz')
                   cd(subject_folderNiftiFx);
                  if numel(matchGEMS)>1
@@ -404,8 +441,13 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                  end
         
             % FIX HEADERS
-                 beep; answer = input('Have you edited niftiFixHeader3 for your needs? (y)es/(n)o: ','s');
-                 if strcmpi(answer,'n'); error('Please proceed and edit the code before fixing headers...');end
+                if retino==0
+                    disp('Normal scan branch: we will use niftiFixHeader3')
+                else
+                    disp('Retinotopy scan branch: we will use niftiFixHeader3_retino')
+                end
+                 %beep; answer = input('Have you edited that code for your needs? (y)es/(n)o: ','s');
+                 %if strcmpi(answer,'n'); error('Please proceed and edit the code before fixing headers...');end
             doFixHeaders = 1; %default
             %check whether code was already run successfully or not
                 cd(subject_folderNiftiFx)
@@ -427,20 +469,26 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 end
             if doFixHeaders == 1
                  disp('Fixing headers')
-                    niftiFixHeader3(subject_folderNiftiFx);
+                    if retino==0
+                        niftiFixHeader3(subject_folderNiftiFx);
+                    else
+                        niftiFixHeader3_retino(subject_folderNiftiFx);
+                    end
                     if exist('epiHeaders_FIXED.txt','file')==2
                         disp('Header fixing was successful.')
                     else
                         error('Some files could not be fixed')
                     end
-                    disp('Take some time here to check that the headers are all OK (freq_dim/phase_dim/slice_duration should not be OK for gems/mprage). Press any key.'); beep; pause;
+                    disp('Take some time here to check that the headers are all OK (freq_dim/phase_dim/slice_duration should not be OK for gems/mprage). TR should be correct too. Press any key if yes.'); beep; pause;
             end
         end
   
       disp(['---------     06   Start of mrVista session   (',dateTime,')    -------------------------------------------------------------------'])
        doMrVista = 1; %default
        %check that nifti folder exists
-            if ~(exist(subject_folderPAR,'dir')==7);  error('Missing PAR folder in Subject folder (for par files)'); end
+            if retino==0
+                if ~(exist(subject_folderPAR,'dir')==7);  error('Missing PAR folder in Subject folder (for par files)'); end
+            end
             if ~(exist(subject_folderNiftiFx,'dir')==7);  error('Missing fixed nifti folder in Subject folder'); end
             
             %check whether code was already run successfully or not
@@ -462,18 +510,28 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 [success, status]=mkdir([subject_folderVista,'/nifti']); if success; disp('Done');else error(status); end
            disp('Creating Parfiles folder, for par files')
                 [success, status]=mkdir([subject_folderVista,'/Stimuli/Parfiles']); if success; disp('Done');else error(status); end
+           
            disp('Copying files to nifti and Parfiles subfolders')
-                cd(subject_folderNiftiFx);
-                [match,dummy] =  regexp(ls,'\w+\.nii\.gz','match','split');%find all nii.gz files
-                for i=1:numel(match)
-                   [success, status]=copyfile(match{i},[subject_folderVista,'/nifti']); if success; disp('Done');else error(status); end
-                end
-                cd(subject_folderPAR);
-                for i=1:numel(match)
-                   [success, status]=copyfile('*',[subject_folderVista,'/Stimuli/Parfiles']); if success; disp('Done');else error(status); end
-                end
+               cd(subject_folderNiftiFx);
+               [match,dummy] =  regexp(ls,'\w+\.nii\.gz','match','split');%find all nii.gz files
+               for i=1:numel(match)
+                       [success, status]=copyfile(match{i},[subject_folderVista,'/nifti']); if success; disp('Done');else error(status); end
+               end
+            if retino==0
+                    cd(subject_folderPAR);
+                    for i=1:numel(match)
+                       [success, status]=copyfile('*',[subject_folderVista,'/Stimuli/Parfiles']); if success; disp('Done');else error(status); end
+                    end
+            else
+               disp('Retino scan branch - skipping PAR files')
+            end
            disp('Running adapted Kelly/Winaver code to inialize a mrVista session...')
+           if retino==0
                 kb_initializeVista2(subject_folderVista, subjectID)
+           else
+               disp('Retino branch - we use a specific code for that branch')
+               kb_initializeVista2_retino(subject_folderVista, subjectID)
+           end
            disp('Lets check that...') %the success of initialization
                 cd(subject_folderVista);
                 if exist('mrSESSION.mat','file')==2 && exist('mrSESSION_backup.mat','file')==2 && exist('mrInit_params.mat','file')==2 

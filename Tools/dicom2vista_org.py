@@ -48,7 +48,7 @@ if __name__ == "__main__":
         for this_dir in dir_list:
             os.system('cp -r ' + this_dir + ' ' + sess_name + '_backup/')
     except:
-        print 'Directories already exist'
+        print("Directories already exist")
     #Directory names
     backup_dir = sess_dir + '/' + sess_name + '_backup/'
     dicom_dir = sess_dir + '/' + sess_name + '_dicom/'
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     for this_dir in dir_list: 
         print("Processing files in " + this_dir)
         os.chdir(sess_dir + '/' + this_dir)
-        print ("Converting dicom files to nifti")
+        print("Converting dicom files to nifti")
         
         #Run dcm2nii in order to do the conversion:
         if os.path.exists(this_dir + 'nii.gz') == False:

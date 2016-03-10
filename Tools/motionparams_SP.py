@@ -209,7 +209,7 @@ if __name__ == "__main__":
     #p = np.genfromtxt('motionparams.txt')
 
     #Save the times where movement was too large:
-    np.savetxt('largemovements.txt',bad_timepoints)
+    np.savetxt('largemovements.txt',bad_timepoints,'%4.0f')
     #REMINDER:
     #column 1 = EPI number just BEFORE motion
     #column 2 = TR number of that EPI just BEFORE motion
