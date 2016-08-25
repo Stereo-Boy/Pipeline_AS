@@ -112,7 +112,8 @@ disp(['---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (',dateTime
             disp('1. Run again (will move folder back to where they should be)');
             disp('2. Skip (recommended)');
             disp('3. Escape');
-        switch answer
+            answer2 = input('? ','s');
+        switch answer2
             case {1} %go for it, so first move folders back to starting structure
                 disp('Copying folder from backup back to raw dicom folder...')
                     [success, status]=copyfile([subject_folderDICOM,'/',rawDICOMfolder,'_backup/*'],subject_folderDICOM); if success; disp('Done');else error(status); end
@@ -155,8 +156,8 @@ disp(['---------      03   REORGANISATION II   (',dateTime,')    ---------------
     if exist([subject_folder,'/',rawBackup],'dir')==7; 
         disp('You may have run the reorgaisation II code before (Raw DICOM backup folder detected). What to do?');  
         disp('2. Skip (recommended)');
-        beep; answer = input('3. Escape ');
-        switch answer
+        beep; answer3 = input('3. Escape ');
+        switch answer3
             case {2} %dont go, move to next step
                 doReOrg = 0;
                 disp('Skipped');
@@ -195,8 +196,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
     %check whether code was already run successfully or not
     if exist(subject_folderMoco,'dir')==7;  disp('You may have run the MoCo code before (moco folder detected). What to do?'); 
         disp('2. Skip (recommended)');
-            beep; answer = input('3. Escape ');
-            switch answer
+            beep; answer4 = input('3. Escape ');
+            switch answer4
                 case {2} %dont go, move to next step
                     doMotionCorrection = 0;
                     disp('Skipped');
@@ -261,8 +262,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 end
                 if success==0 %GOOD
                     disp('python motionparams/SP.py: DONE')
-                    beep; answer = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
-                    if strcmpi(answer, 'n')==1; error('Something went wrong, according to you...');end
+                    beep; answer5 = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
+                    if strcmpi(answer5, 'n')==1; error('Something went wrong, according to you...');end
                 else %NOT GOOD
                     error('python motionparams/SP.py: Something went wrong with last step')
                 end
@@ -292,8 +293,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
     if exist(subject_folderMocoCheck,'dir')==7;  disp('You may have run the MoCo Check test code before (moco check folder detected). What to do?'); 
         disp('1. Start this step over (delete existing 04B folder)');
         disp('2. Skip (recommended)');
-            beep; answer = input('3. Escape ');
-            switch answer
+            beep; answer6 = input('3. Escape ');
+            switch answer6
                 case {1} %delete subject_folderMocoCheck
                     %added because deleting this folder manually everytime
                     %i wanted to redo this step during debugging was very
@@ -360,8 +361,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 end
                 if success==0 %GOOD
                     disp('python motionparams/SP.py: DONE')
-                    beep; answer = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
-                    if strcmpi(answer, 'n')==1; error('Something went wrong, according to you...');end
+                    beep; answer7 = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
+                    if strcmpi(answer7, 'n')==1; error('Something went wrong, according to you...');end
                 else %NOT GOOD
                     error('python motionparams/SP.py: Something went wrong with last step')
                 end
@@ -391,8 +392,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             %check whether code was already run successfully or not
             if exist(subject_folderNiftiFx,'dir')==7;  disp('You may have run the renaming 1 / nifti fix code before (niftiFixedFolder detected). What to do?'); 
                 disp('2. Skip (recommended)');
-                    beep; answer = input('3. Escape ');
-                    switch answer
+                    beep; answer8 = input('3. Escape ');
+                    switch answer8
                         case {2} %dont go, move to next step
                             renaming1 = 0;
                             disp('Skipped');
@@ -454,8 +455,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 if exist('epiHeaders_FIXED.txt','file')==2;  disp('CAREFUL: You may have run the -fixing header- code before on these same files (epiHeaders_FIXED.txt detected). What to do?'); 
                     disp('1. Do it again (first remove epiHeaders_FIXED.txt file)');
                     disp('2. Skip (recommended)');
-                        beep; answer = input('3. Escape ');
-                        switch answer
+                        beep; answer9 = input('3. Escape ');
+                        switch answer9
                             case {1} %move on
                                 delete('epiHeaders_FIXED.txt');
                             case {2} %dont go, move to next step
@@ -494,8 +495,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             %check whether code was already run successfully or not
             if exist([subject_folderVista,'/Inplane'],'dir')==7;  disp('You may have run the mrVista code before (subject_folderVista/Inplane detected). What to do?'); 
                 disp('2. Skip (recommended)');
-                    beep; answer = input('3. Escape ');
-                    switch answer
+                    beep; answer10 = input('3. Escape ');
+                    switch answer10
                         case {2} %dont go, move to next step
                             doMrVista = 0;
                             disp('Skipped');
