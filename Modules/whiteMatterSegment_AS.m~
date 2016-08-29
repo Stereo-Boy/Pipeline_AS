@@ -210,8 +210,8 @@ else
     disp('Creating Segmentation_niftiFixed folder') 
     [success, status]=mkdir(niftiFixFolder); if success; disp('Done');else error(status); end
     disp('Copying file to the folder')
-    [success, status]=copyfile([destinationFolder,'/t1_class.nii.gz'],niftiFixFolder); if success; disp('Done');else error(status); end
-    [success, status]=copyfile([destinationFolder, '/', subjectID, '_nu_RAS_NoRS.nii.gz'],niftiFixFolder); if success; disp('Done');else error(status); end
+    [success, status]=copyfile([destinationFolder,'/t1_class_edited.nii.gz'],niftiFixFolder); if success; disp('Done');else error(status); end
+    [success, status]=copyfile([destinationFolder,[subjectID 'MV40_nu_RAS_NoRS.nii.gz'],niftiFixFolder); if success; disp('Done');else error(status); end
 end
 if doFix == 1
     disp('Fixing...')
