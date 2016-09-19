@@ -18,32 +18,58 @@ function params = make8Bars(params,id)
 % 
 % See also: makeWedges.m
 %
-% Example:
-%    
+% Example: Create 8 bars stimulus using specific orientation and non-integer
+% number of off block frames.
 %
-% Edited by Justin Theiss theissjd@berkeley.edu 9/14/16:
+% % set id, params.analysis, and params.stim(id) with examle data
+% id = 1;
+% params.analysis = struct('fieldSize',10,'sampleRate',.28);
+% params.stim(id) = struct('stimType', '8Bars',...
+%            'stimSize', 10,...
+%           'stimWidth', 128.5700,...
+%             'nCycles', 1,...
+%          'nStimOnOff', 4,...
+%          'nUniqueRep', 1,...
+%     'prescanDuration', 5,...
+%         'framePeriod', 1.8000,...
+%             'nFrames', 130,...
+%          'fliprotate', [0 0 0],...
+%    'orientationOrder', [2,1,4,7,3,8,5,6],...
+%           'nOffBlock', 6.5);
+%
+% % run make8Bars
+% params = make8Bars(params, id);
+% 
+% % show stimulus images to check accuracy
+% for x = 1:params.stim(id).nFrames, 
+%   % show each frame in images (reshaped to correct dimensions)
+%   imshow(reshape(params.stim(id).images(:,x),72,72),'InitialMagnification','fit'); 
+%   % pause for TR to simulate stimulus presentation
+%   pause(params.stim(id).framePeriod); 
+% end;
+% 
+% Edited by Justin Theiss theissjd@berkeley.edu 9/16:
 %
 % These edits allow users to have "off" or "mean luminence" blocks with a
 % non-integer number of frames. Furthermore, we calculate the number of
 % frames per "on" or "stimulus" blocks by using only the number of frames
-% during those blocks and dividing by eight. Finally, the frames between
-% "on" and "off" blocks are weighted by the remainder of the number of
-% frames of "off" blocks (if needed). For example, if you have "off" blocks
+% during those blocks and dividing by the number of orientations. Finally, 
+% the frames between "on" and "off" blocks are weighted by the remainder 
+% of the number of frames (if needed). For example, if you have "off" blocks
 % comprised of 6.75 frames each, the last frame in the "off" block (7th) is
 % weighted by .25 in the location of the bar stimulus. Furthermore, the
-% location of the following frame accounts for the correct difference given
-% there was only .25 frame time change. Likewise, the last "on" frame
-% preceding an "off" block would be weighted by .75 since the bar is
-% present for .75 of the frame.
+% location of the stimulus is adjusted for all following frames. 
 %
 % Users should add a field to params.stim(id) for the orientation order of
 % the bar as params.stim(id).orientationOrder where a value 1 through 8
-% correpsonds to the counter clockwise orientation of 1=Right, 2=...
+% correpsonds to the counter clockwise orientation of 1=Right, 2=LL to UR,
+% 3=Up, 4=LR to UL, 5=Left, 6=UR to LL, 7=Down, 8=UL to LR
+% If no orientationOrder field is present, users will be prompted to enter
+% the order (separated by spaces or commas).
 %
 % Users should also enter the number of frames for the "off" blocks as
-% params.stim(id).nOffBlock. See example.
-%
-
+% params.stim(id).nOffBlock. Again, if this field does not exist and there 
+% are off blocks, the user will be prompted to enter the number of frames.
  
 %% 2006/06 SOD: wrote it.
 %% 2016/09 JDT: edited for use in Silver lab.
@@ -119,7 +145,7 @@ for o = onOffOrder,
     shft = mod(1-abs(mod(n,1)-shft), 1); 
 end;
 
-% set imgOrder to allow for imgNum to repeat shared TRs (JDT 9/16)
+% set imgOrder to allow for imgNum to repeat shared TRs and adjust for shift (JDT 9/16)
 imgOrder = 1:numel(wts);
 for i = 1:numel(wts), if mod(wts(i),1) > 0 && wts(i-1) == wts(i), imgOrder(i:end) = imgOrder(i:end)-1; end; end;
 
