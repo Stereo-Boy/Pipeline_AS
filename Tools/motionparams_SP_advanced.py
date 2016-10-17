@@ -33,6 +33,7 @@ if __name__ == "__main__":
         if file.endswith('mcf.par'):
             motion_list.append(file)
     par_list = motion_list
+    print('Showing the motion parameters for files detected in that order:')
     print par_list
 
     #make empty containers to add the motion params to, for plotting purposes:
@@ -59,18 +60,23 @@ if __name__ == "__main__":
         t3 = np.append(t3,motion_params['T3'])
 
 
-    #note any places where translation motion is more than voxel size
+#note any places where translation motion is more than voxel size
     #get voxel size
-    voxel_size = np.loadtxt('voxelinfo.txt')
+    voxel_size = np.loadtxt('voxelinfo.txt') #it should come directly as x y z
+    #voxel_size = [voxel_size[i] for i in [0 2 1]] #reorder to get x, z, y instead of x y z
     voxelFactor = 0.5
     #voxel_size = np.array([1.,1.,1.]) ##TEMPORARY for testing
     print "Voxel size is %s" % voxel_size
 
-    #need to find a way to read in brain dimensions from subject data
-    #currently using average dimensions from this website
-    #https://faculty.washington.edu/chudler/facts.html
-    brain_dims = np.array([140.,93.,167.]) #TEMPORARY for testing, in mm
-    print "Brain dimensions are %s" % brain_dims
+    #need to read brain dimensions from file brainDimsInfo.txt
+    if os.path.isfile('brainDimsInfo.txt'):
+        print('Loading volume dimensions from file')
+        brain_dims = np.loadtxt('brainDimsInfo.txt')
+    else:
+        #otherwise, using average dimensions from this website
+        #https://faculty.washington.edu/chudler/facts.html
+        brain_dims = np.array([167.,93.,140.]) #average brain, for testing, in mm (x L-R / z I-S/ y A-P)
+    print "Brain/Volume dimensions are %s" % brain_dims
     brain_dims = brain_dims/2
 
     #make vectors for differences between adjacent TRs
@@ -149,16 +155,19 @@ if __name__ == "__main__":
     dicom_dir = sess_dir + '/' + sess_name + '_dicom'
     dir_list = np.array(os.listdir(dicom_dir))
     num_TRs_per_epi = []
+    epiNb=0
     for folder in dir_list:
         if folder.startswith('epi'):
             dicom_files = os.listdir(dicom_dir + '/' + folder)
             num_TRs_per_epi.append(len(dicom_files))
+            epiNb += 1
+    print "Number of EPI %s" % epiNb
     print "Number of TRs per epi %s" % num_TRs_per_epi
 
     #we will be storing which EPI and TR had too large of movements
     bad_timepoints = np.array([]).reshape(0,3)
-    #column 1 = EPI number just BEFORE motion
-    #column 2 = TR number of that EPI just BEFORE motion
+    #column 1 = EPI number at motion
+    #column 2 = TR number of that EPI at motion (currently TR BEFORE)
     #column 3 = which translation dimension large motion is in
 
     #Plot the motion params:
@@ -168,9 +177,12 @@ if __name__ == "__main__":
     ax1.plot(t1,'b-') #blue solid line
     ax1.plot(t2,'r-') #red solid line
     ax1.plot(t3,'g-') #green solid line
+    middleTR = (epiNb//2)*num_TRs_per_epi[1]+num_TRs_per_epi[1]//2
     #get current y axis min and max
     ymin, ymax = plt.ylim()
     ax1.set_ylabel('Translation (mm)')
+    ax1.plot(np.array([middleTR, middleTR]),
+         np.array([ymin, ymax]),'k-') #black solid line showing origin of alignment
     #first look at dimension 1 for motion bigger than half voxel size
     index = 0
     for movement in total_T1_differences:

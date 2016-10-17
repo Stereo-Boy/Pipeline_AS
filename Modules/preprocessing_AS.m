@@ -19,6 +19,7 @@ disp('- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whateve
 disp('- You should be in the subject folder for the subject that you want to analyse')
 beep; answer = input('Is it all correct? 1 = ESC; Enter = OK ','s');
 if str2double(answer) == 1; error('ESCAPE'); end
+beep; nbOfEPI = str2double(input('Please enter how many EPI are you expecting to be processed: ','s'));
 
 %define subject folder and subject ID
 subject_folder = cd;
@@ -65,7 +66,7 @@ disp('For convenience, the pipeline allows you to have two different branches, o
 disp('1. Normal scans') %retino will be 0
 disp('2. Retino scans') %retino will be 1
 beep; retino = input('Answer: ')-1;
-if retino==1; disp('Retinotopy branch'); elseif retino==0; disp('Normal branch'); else error('Response not understood...exit');end
+if retino==1;disp('Retinotopy branch'); elseif retino==0; disp('Normal branch'); else error('Response not understood...exit'); end
 
 disp(['***********       STARTING PIPELINE  AT  ', dateTime,' for subjectID ', subjectID,'       *******************'])
 %check existence of folders
@@ -147,7 +148,15 @@ disp(['---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (',dateTime
         %check that nifti conversion was successful
         cd([subject_folderDICOM,'/',rawDICOMfolder,'_nifti']);
         [match,dummy] =  regexp(ls,'epi+\w+\.nii\.gz','match','split');%find all nii.gz files starting with epi
-            if isempty(match)==0; disp('Nifti conversion seems successful: nifti files detected.'); else error('Unsuccessful nifti conversion'); end
+            if isempty(match)==1; 
+                error('Unsuccessful nifti conversion'); 
+            else
+                if numel(match)==nbOfEPI
+                    disp(['Nifti conversion seems successful: ',num2str(nbOfEPI),' nifti files detected.']);
+                else  
+                    error(['We detected converted nifti files but the number of files seems incorrect: ',num2str(numel(match)), 'files instead of ', num2str(nbOfEPI)]); 
+                end
+            end
         disp('Finished FILE ORGANISATION AND NIFTI CONVERSION')
     end
 
@@ -218,9 +227,9 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
         disp('Copying nifti files to MoCo subfolders...')
             [success, status]=copyfile([subject_folderNIFTI,'/*'],[subject_folderMoco,'/',mocoFolder,'_nifti']); if success; disp('Done');else error(status); end
             [success, status]=copyfile([subject_folderDICOM,'/*'],[subject_folderMoco,'/',mocoFolder,'_dicom']); if success; disp('Done');else error(status); end
-        disp('Starting motioncorrect/SP.py in:'); 
+        disp('Starting motioncorrect_SP.py in:'); 
         if exist([preprocessPath, '/motioncorrect_SP.py'],'file')==2
-            cd(preprocessPath); %if you have the file for updated motion correction, use it
+            cd(preprocessPath) %if you have the file for updated motion correction, use it
             disp('Enhanced motion correction file motioncorrect_SP.py found in /Tools will be used.');
             disp('This will align all epi files to the middle volume of the middle epi.');
             disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
@@ -228,7 +237,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             disp('Starting...')
             success = system(['python motioncorrect_SP.py ', subject_folderMoco]);
         else 
-            cd(preprocessPath); %otherwise use old version to align to epi01
+            cd(preprocessPath) %otherwise use old version to align to epi01
             disp('Old motion correction file motioncorrect.py found Tools will be used.');
             disp('This will align all epi files to the first volume of epi01.');
             disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
@@ -236,40 +245,67 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             disp('Starting...')
             success = system(['python motioncorrect.py ', subject_folderMoco]);
         end 
-             
         if success==0 %GOOD
-                disp('python motioncorrect/SP.py: DONE'); 
-                % CHECK PARAMS HERE
-                %Need to write voxel size to a .txt file for
-                %motionparams_SP_advanced.py to read in
-                first_epi_file = dir([subject_folderNIFTI '/epi01*']);
-                ni = readFileNifti([subject_folderNIFTI '/' first_epi_file.name]);
-                voxel_size = ni.pixdim(1:3);
-                fileID = fopen([subject_folderMoco '/' mocoFolder '_nifti/voxelinfo.txt'],'w');
-                fprintf(fileID,'%8.5f',voxel_size);
-                fclose(fileID);
+                disp('python motioncorrect_SP.py: DONE');
+        else %NOT GOOD
+            error('python motioncorrect_SP.py: Something went wrong with last step')
+        end
+    end
+    readMotionCorrectedParameters = 1;
+    cleaning=1;
+    %check whether code was already run successfully or not
+    if exist([subject_folderMoco '/' mocoFolder '_nifti'],'dir')==0;  disp('You may have run the MoCo cleaning code before (moco folder _nifti not detected). What to do?'); 
+        disp('2. Skip (recommended)');
+            beep; answer4 = input('3. Escape ');
+            switch answer4
+                case {2} %dont go, move to next step
+                    readMotionCorrectedParameters = 0; cleaning=0;
+                    disp('Skipped');
+                case {3} %escape
+                    error('Voluntary interruption')
+                otherwise
+                error('Answer not understood')
+            end            
+    end
+    if readMotionCorrectedParameters==1
+         % PROCESS MOTION PARAMETERS READING
+                % Need to write voxel size to a .txt file for motionparams_SP_advanced.py to read in
+                    disp('Writing parameters in voxelinfo.txt and brainDimsInfo.txt for correct reading of motion parameters')
+                    first_epi_file = dir([subject_folderNIFTI '/epi01*']);
+                    ni = readFileNifti([subject_folderNIFTI '/' first_epi_file.name]);
+                    voxel_size = ni.pixdim(1:3);  
+                    %if not retino, shoudl be reorder as x z y
+                    if retino==0; voxel_size = voxel_size([1 3 2]); end
+                    fileID = fopen([subject_folderMoco '/' mocoFolder '_nifti/voxelinfo.txt'],'w');  fprintf(fileID,'%8.5f',voxel_size);
+                    fclose(fileID);
+                 % needs brain dimensions too
+                    brainDims=ni.pixdim(1:3).*ni.dim(1:3);
+                    fileID = fopen([subject_folderMoco '/' mocoFolder '_nifti/brainDimsInfo.txt'],'w');fprintf(fileID,'%8.5f %8.5f %8.5f',brainDims);
+                    fclose(fileID);
                 disp('Please check the motion correction results...')
                 cd(preprocessPath);
                 if retino==0 %for normal scans, we use advanced motion param calculation assuming this is a whole brain
-                    disp('Normal scan branch: we assume this is a whole brain scan - if this gives you too inacurate results, modify code here to use the retinotopy branch instead.')
+                    disp('Normal scan branch: we assume this is a whole brain scan and use averages - if this is too inacurate, modify code')
+                    disp(' to use motionparams_SP instead or edit motionparams_SP_advanced with different brain average dimensions.')
                     success = system(['python motionparams_SP_advanced.py ', subject_folderMoco]);
                     %the code above will estimate motion parameters based
                     %on a worse case scenario of the translation occuring
                     %as a result of the rotations of the whole brain
                 else %retinotopy branch
-                    disp('Retino scan branch: we used a simplified code here to calculate motion parameters.')
-                    success = system(['python motionparams_SP.py ', subject_folderMoco]);
+                    disp('Retino scan branch: we use advanced code that consider the whole scan volume to estimate motion parameters.')
+                    disp('To work that way, it needs to find a file called brainDimsInfo with the dimensions of the volume in mm')
+                    success = system(['python motionparams_SP_advanced.py ', subject_folderMoco]);
                 end
                 if success==0 %GOOD
-                    disp('python motionparams/SP.py: DONE')
+                    disp('python motionparams_SP.py: DONE')
                     beep; answer5 = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
                     if strcmpi(answer5, 'n')==1; error('Something went wrong, according to you...');end
                 else %NOT GOOD
-                    error('python motionparams/SP.py: Something went wrong with last step')
+                    error('python motionparams_SP.py: Something went wrong with last step')
                 end
-        else %NOT GOOD
-            error('python motioncorrect/SP.py: Something went wrong with last step')
-        end
+    end
+    % CLEANING FILES 
+    if cleaning==1
         disp('Moving files back to moco root folder...')
                 [success, status]=copyfile([subject_folderMoco,'/',mocoFolder,'_nifti/*'],subject_folderMoco); if success; disp('Done');else error(status); end
         disp('Deleting old folders...')
@@ -325,7 +361,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
         for i=1:length(epiFolders)
             movefile([subject_folderMocoCheck,'/',mocoCheckFolder,'_dicom/',epiFolders(i).name],[subject_folderMocoCheck,'/',mocoCheckFolder,'_dicom/',epiFolders(i).name,'_mcf']);
         end
-            disp('Motion correction check: Starting motioncorrect/SP.py in:');
+            disp('Motion correction check: Starting motioncorrect_SP.py in:');
         if exist([preprocessPath '/motioncorrect_SP.py'],'file')==2
             cd(preprocessPath); %if you have the file for updated motion correction, use it
             disp('Updated motion correction file found and will be used.');
@@ -344,30 +380,35 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             success = system(['python motioncorrect.py ', subject_folderMocoCheck]); 
         end  
         if success==0 %GOOD
-               disp('python motioncorrect/SP.py: DONE'); 
+               disp('python motioncorrect_SP.py: DONE'); 
                    % CHECK PARAMS HERE
-                disp('Please check the motion correction results...')
+                disp('Retrieve info files')
                 [success, status] = copyfile([subject_folderMoco '/voxelinfo.txt'],[subject_folderMocoCheck '/' mocoCheckFolder '_nifti/voxelinfo.txt']);
                 if success; disp('voxelinfo.txt file copied...');else error(status); end
+                [success, status] = copyfile([subject_folderMoco '/brainDimsInfo.txt'],[subject_folderMocoCheck '/' mocoCheckFolder '_nifti/brainDimsInfo.txt']);
+                if success; disp('brainDimsInfo.txt file copied...');else error(status); end
+                disp('Please check the motion correction results...')
                 if retino==0 %for normal scans, we use advanced motion param calculation assuming this is a whole brain
-                    disp('Normal scan branch: we assume this is a whole brain scan (and axial scan)- if this gives you too inacurate results, modify code here to use the retinotopy branch instead.')
+                    disp('Normal scan branch: we assume this is a whole brain scan and use averages - if this is too inacurate, modify code')
+                    disp(' to use motionparams_SP instead or edit motionparams_SP_advanced with different brain average dimensions.')
                     success = system(['python motionparams_SP_advanced.py ', subject_folderMocoCheck]);
                     %the code above will estimate motion parameters based
                     %on a worse case scenario of the translation occuring
                     %as a result of the rotations of the whole brain
                 else %retinotopy branch
-                    disp('Retino scan branch: we used a simplified code here to calculate motion parameters.')
-                    success = system(['python motionparams_SP.py ', subject_folderMocoCheck]);
+                    disp('Retino scan branch: we use advanced code that consider the whole scan volume to estimate motion parameters.')
+                    disp('To work that way, it needs to find a file called brainDimsInfo with the dimensions of the volume in mm')
+                    success = system(['python motionparams_SP_advanced.py ', subject_folderMocoCheck]);
                 end
                 if success==0 %GOOD
-                    disp('python motionparams/SP.py: DONE')
+                    disp('python motionparams_SP.py: DONE')
                     beep; answer7 = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
                     if strcmpi(answer7, 'n')==1; error('Something went wrong, according to you...');end
                 else %NOT GOOD
-                    error('python motionparams/SP.py: Something went wrong with last step')
+                    error('python motionparams_SP_advanced.py: Something went wrong with last step')
                 end
         else %NOT GOOD
-            error('python motioncorrect/SP.py: Something went wrong with last step')
+            error('python motionparams_SP_advanced.py: Something went wrong with last step')
         end
         disp('Moving files back to mococheck root folder...')
                 [success, status]=copyfile([subject_folderMocoCheck,'/',mocoCheckFolder,'_nifti/*'],subject_folderMocoCheck); if success; disp('Done');else error(status); end

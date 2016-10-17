@@ -5,7 +5,7 @@
 These niftis should already be in the file structure expected by mrVista,
 which can be created using dicom2vista_org.py.
 
-This script will attempt to motion correct all files starting with 'epi'
+This script will attempt to motion correct all files starting with 'epi' and 'gems'
 that are located in the session _nifti directory. It will motion correct
 to a reference volume, which is the middle volume of the scan. It expects
 this volume to be found in the session _dicom directory in a subdirectory 
@@ -42,27 +42,31 @@ if __name__ == "__main__":
     print(nifti_list)
     #In order to not include '.DS_store'
     epi_list = []
+    gems_list = []
     for file in nifti_list:
         if file.startswith('epi'):
             epi_list.append(file)
+        if file.startswith('gems'):
+            gems_list.append(file)
 
     os.chdir(nifti_dir)
     print os.path.realpath(os.path.curdir)
 
     # First find the middle epi and use it as ref_vol.nii
     num_epis = len(epi_list)
+    #take middle TR of the epi
     mid_epi = epi_list[num_epis//2]
     print('Creating reference volume from middle epi volume')
     epi_mid_dir = os.path.splitext(os.path.splitext(mid_epi)[0])[0]
     os.chdir(dicom_dir + epi_mid_dir)
     print os.path.realpath(os.path.curdir)
 
-    # Find middle dicom file
+    # Find middle dicom file and convert it to nifti
     mid_dicom_dir = dicom_dir + '/' +  mid_epi[:-7]  # take off .nii.gz file extension
     mid_dicom_list = np.array(os.listdir(mid_dicom_dir))
     mid_mid_dicom = str(len(mid_dicom_list)//2)
-
-    print('EXECUTING dcm2nii on ' + mid_mid_dicom + ' dicom of ' + mid_epi)
+    middle_total_TR = len(mid_dicom_list)//2
+    print('For that, executing dcm2nii on ' + mid_mid_dicom + ' dicom of ' + mid_epi)
     os.system('dcm2nii -g N -v N *' + mid_mid_dicom + '.dcm')
     os.system('mv *.nii ref_vol.nii')
             
@@ -73,18 +77,26 @@ if __name__ == "__main__":
     os.chdir(nifti_dir)
     print os.path.realpath(os.path.curdir)
 
+# ACTUAL MOTION CORRECTION
+#Run mcflirt motion correction on the 4d nifti file with
+#the params (cost=mutualinfo and smooth=16) are taken from the
+#Berkeley shell-script AlignFSL070408.sh:
+
+    # Do motion correction on GEMS list (more than one can be corrected whenever they start with the letters 'gems')
+    for this_gems in gems_list:
+        print('Motion correction for ' + this_gems)
+        os.system('mcflirt -reffile ' + ref_vol_path +
+                  ' -plots -report -cost mutualinfo -smooth 16 -in ' +
+                  this_gems)
+        print('DONE')
+
     # Do motion correction on epis
     for this_epi in epi_list: 
-        #Run mcflirt motion correction on the 4d nifti file with
-        #reference to the first volume in the first epi (this assumes 
-        #that the gems were acquired right before the first run). 
-        #The params (cost=mutualinfo and smooth=16) are taken from the 
-        #Berkeley shell-script AlignFSL070408.sh:
         print('Motion correction for ' + this_epi)
-        
         os.system('mcflirt -reffile ' + ref_vol_path +
               ' -plots -report -cost mutualinfo -smooth 16 -in ' + 
               this_epi)
+        print('DONE')
 
 	    #Remove the file that was used as reference for MC:
 	    # os.system('rm ' + ref_vol_path)
