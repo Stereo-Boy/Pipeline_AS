@@ -66,6 +66,14 @@ disp('Loaded path to spm files on top.')
 path(genpath(knkPath),path);
 disp('Loaded path to KNK files on top.')
 
+%Add FSL to the path
+fsldir = '/usr/local/fsl'; %path to your FSL folder
+cd(fsldir) 
+setenv( 'FSLDIR', fsldir );
+fsldirmpath = sprintf('%s/etc/matlab',fsldir);
+path(path, genpath(fsldirmpath));
+disp('Defined FSL directory and loaded path to (fsldir)/etc/matlab.')
+
 %Add MRIcron to the path
 path(mricron, path);
 disp('Loaded path to MRIcron on top.')
@@ -128,10 +136,3 @@ clear version fsmatlab fsfasttoolbox fsfasthome fsPerl fsSubjects fshome fsSubje
 % setenv('SUBJECTS_DIR', '/Applications/freesurfer/subjects/')
 % disp('Set subjects_dir variable in path')
 % 
-% %Add FSL to the path
-% fsldir = '/usr/local/fsl'; %path to your FSL folder
-% cd(fsldir) 
-% setenv( 'FSLDIR', fsldir );
-% fsldirmpath = sprintf('%s/etc/matlab',fsldir);
-% path(path, genpath(fsldirmpath));
-% disp('Loaded path to FSL/etc/matlab.')
