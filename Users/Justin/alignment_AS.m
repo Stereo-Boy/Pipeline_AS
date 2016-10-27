@@ -1,6 +1,6 @@
 function xform = alignment_AS(sessionDir, vol, ref, ipath, steps, iter)
 % xform = alignment_AS(sessionDir, vol, ref, ipath, steps, iter)
-% 
+%
 % Automated alignment:
 % 1. run fsl brain extraction
 % 2. run mrvista coarse alignment
@@ -18,21 +18,23 @@ function xform = alignment_AS(sessionDir, vol, ref, ipath, steps, iter)
 % Outputs:
 % xform : realignment transformation matrix (also saved to mrSESSION.mat file)
 %
-% Created by Justin Theiss 10/16 
-%(adapted from mrvista rxFineMutualInf and rxFineNestares) 
+% Created by Justin Theiss 10/16
+%(adapted from mrvista rxFineMutualInf and rxFineNestares)
 
 % init vars
 if ~exist('sessionDir','var')||isempty(sessionDir), sessionDir = pwd; end;
-if ~exist('vol','var')||isempty(vol), 
-    [f,p] = uigetfile('*.nii.gz','Choose volume:'); 
+if ~exist('vol','var')||isempty(vol),
+    [f,p] = uigetfile('*.nii.gz','Choose volume:');
     vol = fullfile(p,f);
 end;
-if ~exist('ref','var')||isempty(ref), 
+if ~exist('ref','var')||isempty(ref),
     [f,p] = uigetfile('*.nii.gz','Choose reference:');
     ref = fullfile(p,f);
 end;
 if ~exist('steps','var')||isempty(steps), steps = 1:4; end;
-if any(steps==2) && (~exist('ipath','var')||isempty(ipath)),
+if ~any(steps==2),
+  ipath = [];
+elseif any(steps==2) && (~exist('ipath','var')||isempty(ipath)),
     ipath = uigetdir(cd,['Choose I*.dcm folder path for ' ref]);
 end;
 if ~exist('iter','var')||isempty(iter), iter = 1; end;
@@ -47,8 +49,8 @@ vol_b = fullfile(p,[f '_brain' e2 e]);
 [p,f,e] = fileparts(ref);
 [~,f,e2] = fileparts(f);
 ref_b = fullfile(p,[f '_brain' e2 e]);
-    
-% run fsl brain extraction    
+
+% run fsl brain extraction
 system(['bet "' vol '" "' vol_b '" -R;'...
     'bet "' ref '" "' ref_b '" -R;']);
 
@@ -77,7 +79,7 @@ VF.uint8 = uint8(vol_data);
 
 % get xform to scanner coords (some serious voodoo in that last line)
 xformToScanner = computeXformFromIfile(ipath);
-xformToScanner = inv( xformToScanner ); 
+xformToScanner = inv( xformToScanner );
 xformToScanner(1:3,4) = xformToScanner([1:3],4) + [10 -20 -20]';
 
 % set ref mat
@@ -88,7 +90,7 @@ hsz = size(vol_data) ./ 2;
 res = volVoxelSize;
 VF.mat = [0 0 res(3) -hsz(3); ...
           0 -res(2) 0 hsz(1); ...
-          -res(1) 0 0 hsz(2); ... 
+          -res(1) 0 0 hsz(2); ...
           0 0 0 1];
 
 % set flag
@@ -111,9 +113,9 @@ end;
 
 %% 3. Mutual Information (fine alignment; taken from rxFineMutualInf)
 if any(steps==3),
-% set tolerances for rotations and translations 
+% set tolerances for rotations and translations
 flags.tol = [0.005 0.005 0.005 0.001 0.001 0.001];
-for i = 1:iter, 
+for i = 1:iter,
     % set params in flags to account for coarse alignment
     revAlignment = spm_imatrix(VF.mat * xform / VG.mat);
     flags.params = revAlignment(1:6);
@@ -163,7 +165,7 @@ xform(:,[1 2]) = xform(:,[2 1]);
 xform([1 2],:) = xform([2 1],:);
 end;
 
-% save to mrSESSION.mat 
+% save to mrSESSION.mat
 if exist(fullfile(pwd,'mrSESSION.mat'), 'file'),
 load(fullfile(pwd, 'mrSESSION.mat'), 'mrSESSION');
 mrSESSION.alignment = xform;
