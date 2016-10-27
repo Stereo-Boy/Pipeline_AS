@@ -1,16 +1,19 @@
-function xform = alignment_AS(sessionDir, vol, ref, ipath)
-% xform = alignment_AS(sessionDir, vol, ref, ipath)
+function xform = alignment_AS(sessionDir, vol, ref, ipath, steps, iter)
+% xform = alignment_AS(sessionDir, vol, ref, ipath, steps, iter)
 % 
 % Automated alignment:
 % 1. run fsl brain extraction
 % 2. run mrvista coarse alignment
-% 3. run mrvista fine alignment
+% 3. run mrvista fine alignment (for iter number of iterations)
 % 4. run mrvista Nestares fine alignment
 %
 % Inputs:
 % sessionDir : string full path to mrvista session directory (default is pwd)
 % vol : string full path to volume file (e.g. MV40_nu_RAS_NoRS.nii.gz file)
 % ref : string full path to reference file (e.g. gems.nii.gz file)
+% ipath : string full path to folder containing .dcm files for ref file
+% steps : [optional] numeric array corresponding to the above steps to be run [default=1:4]
+% iter : [optional] number of fine alignment iterations (spm_coreg) [default=1]
 %
 % Outputs:
 % xform : realignment transformation matrix (also saved to mrSESSION.mat file)
@@ -28,7 +31,15 @@ if ~exist('ref','var')||isempty(ref),
     [f,p] = uigetfile('*.nii.gz','Choose reference:');
     ref = fullfile(p,f);
 end;
+if ~exist('steps','var')||isempty(steps), steps = 1:4; end;
+if any(steps==2) && (~exist('ipath','var')||isempty(ipath)),
+    ipath = uigetdir(cd,['Choose I*.dcm folder path for ' ref]);
+end;
+if ~exist('iter','var')||isempty(iter), iter = 1; end;
+xform = [];
 
+%% 1. run fsl brain extraction
+if any(steps==1),
 % create filenames with _brain appended
 [p,f,e] = fileparts(vol);
 [~,f,e2] = fileparts(f);
@@ -36,8 +47,8 @@ vol_b = fullfile(p,[f '_brain' e2 e]);
 [p,f,e] = fileparts(ref);
 [~,f,e2] = fileparts(f);
 ref_b = fullfile(p,[f '_brain' e2 e]);
-
-%% 1. run fsl brain extraction
+    
+% run fsl brain extraction    
 system(['bet "' vol '" "' vol_b '" -R;'...
     'bet "' ref '" "' ref_b '" -R;']);
 
@@ -48,16 +59,24 @@ system(['bet "' vol '" "' vol_b '" -R;'...
 vw = loadAnat(struct('viewType','Inplane'),ref_b);
 ref_data = viewGet(vw,'Anatomy Data');
 refVoxelSize = viewGet(vw,'Voxel Size');
+else % if not running bet
+% get vol_data as rxAlign does
+[vol_data, volVoxelSize] = readVolAnat(vol);
+
+% get ref_data as rxAlign does
+vw = loadAnat(struct('viewType','Inplane'),ref);
+ref_data = viewGet(vw,'Anatomy Data');
+refVoxelSize = viewGet(vw,'Voxel Size');
+end;
 
 %% 2. spm_coreg (coarse alignment; taken from rxFineMutualInf)
-
+if any(steps==2),
 % get ref and vol data as uint8
 VG.uint8 = uint8(ref_data);
 VF.uint8 = uint8(vol_data);
 
 % get xform to scanner coords (some serious voodoo in that last line)
-inplaneFile = (ipath);
-xformToScanner = computeXformFromIfile(inplaneFile, []);
+xformToScanner = computeXformFromIfile(ipath);
 xformToScanner = inv( xformToScanner ); 
 xformToScanner(1:3,4) = xformToScanner([1:3],4) + [10 -20 -20]';
 
@@ -69,7 +88,7 @@ hsz = size(vol_data) ./ 2;
 res = volVoxelSize;
 VF.mat = [0 0 res(3) -hsz(3); ...
           0 -res(2) 0 hsz(1); ...
-          -res(1) 0 0 hsz(2); ... %or res(1) -hsz(2)
+          -res(1) 0 0 hsz(2); ... 
           0 0 0 1];
 
 % set flag
@@ -83,25 +102,30 @@ xform = VF.mat \ spm_matrix(rotTrans) * VG.mat;
 
 % apply axial flip
 shift = [eye(3) -size(ref_data)'./2; 0 0 0 1];
-xform = shift*xform/shift;
+xform = shift * xform / shift;
 [trans, rot] = affineDecompose(xform);
 scale = [-1,1,1] .* refVoxelSize ./ volVoxelSize;
 xform = affineBuild(trans,rot,scale,[0,0,0]);
-shift = [eye(3) -size(ref_data)'./2; 0 0 0 1];
 xform = shift \ xform * shift;
+end;
 
 %% 3. Mutual Information (fine alignment; taken from rxFineMutualInf)
-% set params in flags to account for coarse alignment
-revAlignment = spm_imatrix(VF.mat * xform / VG.mat);
-flags.params = revAlignment(1:6);
-
-% get rot/trans from spm_coreg
-rotTrans = spm_coreg(VG, VF, flags);
-
-% build alignment matrix
-xform = VF.mat \ spm_matrix(rotTrans) * VG.mat;
+if any(steps==3),
+% set tolerances for rotations and translations 
+flags.tol = [0.005 0.005 0.005 0.001 0.001 0.001];
+for i = 1:iter, 
+    % set params in flags to account for coarse alignment
+    revAlignment = spm_imatrix(VF.mat * xform / VG.mat);
+    flags.params = revAlignment(1:6);
+    % run spm_coreg
+    rotTrans = spm_coreg(VG, VF, flags);
+    % build alignment matrix
+    xform = VF.mat \ spm_matrix(rotTrans) * VG.mat;
+end;
+end;
 
 %% 4. Nestares (further fine alignment; taken from rxFineNestares)
+if any(steps==4),
 % switch rows and columns because mrvista is terrible
 % flip to (x,y,z) instead of (y,x,z):
 xform(:,[1 2]) = xform(:,[2 1]);
@@ -137,6 +161,7 @@ xform(4,4)=1;
 % flip to (x,y,z) instead of (y,x,z):
 xform(:,[1 2]) = xform(:,[2 1]);
 xform([1 2],:) = xform([2 1],:);
+end;
 
 % save to mrSESSION.mat 
 if exist(fullfile(pwd,'mrSESSION.mat'), 'file'),
