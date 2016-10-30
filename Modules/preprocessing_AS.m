@@ -8,6 +8,11 @@ function preprocessing_AS(subjectID)
 % Sheremata
 % ------------------------------------------------------------------------------------------------------------
 clc
+c=clock;
+diary(['preprocessing_As_',num2str(c(1)),num2str(c(2)),num2str(c(3)),'.txt']);
+diary ON
+disp(dateTime)
+
 % ------------------------------------------------------------------------------------------------------------
 % REPLACE THE FOLLOWING VARIABLE WITH YOUR VALUES
 disp(' --------------   CHECKLIST BEFORE STARTING   -----------------')
@@ -19,7 +24,7 @@ disp('- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whateve
 disp('- You should be in the subject folder for the subject that you want to analyse')
 beep; answer = input('Is it all correct? 1 = ESC; Enter = OK ','s');
 if str2double(answer) == 1; error('ESCAPE'); end
-beep; nbOfEPI = str2double(input('Please enter how many EPI are you expecting to be processed: ','s'));
+beep; nbOfEPI = input('Please enter how many EPI are you expecting to be processed: ');
 
 %define subject folder and subject ID
 subject_folder = cd;
@@ -84,9 +89,9 @@ disp(['***********       STARTING PIPELINE  AT  ', dateTime,' for subjectID ', s
            error('System call no1 failed') 
         end
     disp('------------------------------------------------------------------------------------------------------------------------')
-    disp('Testing whether dcm2nii is found (you should see Chris Rordens dcm2nii help below):')
-        if system('dcm2nii')>0
-            error('System call to dcn2nii failed') 
+    disp('Testing whether dcm2niix is found (you should see Chris Rordens dcm2nii help below):')
+        if system('dcm2niix')>0
+            error('System call to dcn2niix failed') 
         end
 disp('----------- END OF STARTING CHECKS --------------------')
 
@@ -113,7 +118,7 @@ disp(['---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (',dateTime
             disp('1. Run again (will move folder back to where they should be)');
             disp('2. Skip (recommended)');
             disp('3. Escape');
-            answer2 = input('? ','s');
+            answer2 = input('? ');
         switch answer2
             case {1} %go for it, so first move folders back to starting structure
                 disp('Copying folder from backup back to raw dicom folder...')
@@ -154,7 +159,7 @@ disp(['---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (',dateTime
                 if numel(match)==nbOfEPI
                     disp(['Nifti conversion seems successful: ',num2str(nbOfEPI),' nifti files detected.']);
                 else  
-                    error(['We detected converted nifti files but the number of files seems incorrect: ',num2str(numel(match)), 'files instead of ', num2str(nbOfEPI)]); 
+                    error(['We detected converted epi nifti files but the number of files seems incorrect: ',num2str(numel(match)), 'files instead of ', num2str(nbOfEPI)]); 
                 end
             end
         disp('Finished FILE ORGANISATION AND NIFTI CONVERSION')
@@ -268,18 +273,21 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             end            
     end
     if readMotionCorrectedParameters==1
-         % PROCESS MOTION PARAMETERS READING
+         %  MOTION PARAMETERS READING
                 % Need to write voxel size to a .txt file for motionparams_SP_advanced.py to read in
                     disp('Writing parameters in voxelinfo.txt and brainDimsInfo.txt for correct reading of motion parameters')
                     first_epi_file = dir([subject_folderNIFTI '/epi01*']);
                     ni = readFileNifti([subject_folderNIFTI '/' first_epi_file.name]);
                     voxel_size = ni.pixdim(1:3);  
-                    %if not retino, shoudl be reorder as x z y
-                    if retino==0; voxel_size = voxel_size([1 3 2]); end
+                    %should be reorder as x z y
+                    voxel_size = voxel_size([1 3 2]);
                     fileID = fopen([subject_folderMoco '/' mocoFolder '_nifti/voxelinfo.txt'],'w');  fprintf(fileID,'%8.5f',voxel_size);
                     fclose(fileID);
                  % needs brain dimensions too
-                    brainDims=ni.pixdim(1:3).*ni.dim(1:3);
+                    pixDim=ni.dim(1:3);
+                    %should be reorder as x z y
+                    pixDim = pixDim([1 3 2]);
+                    brainDims=pixDim.*voxel_size;
                     fileID = fopen([subject_folderMoco '/' mocoFolder '_nifti/brainDimsInfo.txt'],'w');fprintf(fileID,'%8.5f %8.5f %8.5f',brainDims);
                     fclose(fileID);
                 disp('Please check the motion correction results...')
@@ -455,21 +463,29 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                 end
             disp(['Copying gems and mprage from nifti folder to: ',niftiFixedFolder])
                 cd(subject_folderNIFTI);
+               if retino==0
                 [matchMPRAGE,dummy] =  regexp(ls,'^((?<![co])\w*)mprage\w*\.nii\.gz','match','split'); %find all nii.gz files containing word mprage except ones starting by co and o
-                [matchGEMS,dummy] =  regexp(ls,'gems\w*\.nii\.gz','match','split'); %find all nii.gz files containing word gems
-                for i=1:numel(matchMPRAGE)
+                   for i=1:numel(matchMPRAGE)
                        [success, status]=copyfile(matchMPRAGE{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
-                end
+                   end
+               else disp('Skipping mprage process for retino branch');
+               end
+                [matchGEMS,dummy] =  regexp(ls,'gems\w*\.nii\.gz','match','split'); %find all nii.gz files containing word gems
+
                 for i=1:numel(matchGEMS)
                        [success, status]=copyfile(matchGEMS{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
                 end
-             disp('Renaming mprage file to mprage.nii.gz')
+             if retino==0
+                    disp('Renaming mprage file to mprage.nii.gz')
                       cd(subject_folderNiftiFx);
                      if numel(matchMPRAGE)>1
                          error('More than one mprage file found...')
                      else
                          [success, status]=movefile(matchMPRAGE{1},'mprage.nii.gz'); if success; disp('Done');else error(status); end
                      end
+             else
+                 disp('Skipping mprage operations for retino branch')
+             end
              disp('Renaming gems* file to gems.nii.gz')
                   cd(subject_folderNiftiFx);
                  if numel(matchGEMS)>1
@@ -586,4 +602,5 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
 
     
 disp(['***********       PIPELINE FINISHED  AT  ', dateTime,' for subjectID ', subjectID,'       *******************'])
+diary OFF
 beep;

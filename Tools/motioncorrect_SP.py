@@ -32,15 +32,19 @@ if __name__ == "__main__":
 
     #switch to session directory:
     os.chdir(sess_dir)
-    print os.path.realpath(os.path.curdir)
 
     #Directory names: these directories are expected
     dicom_dir = sess_dir + '/' + sess_name + '_dicom/'
     nifti_dir = sess_dir + '/' + sess_name + '_nifti/'
 
+    os.chdir(nifti_dir)
+    print 'Moving to:'
+    print os.path.realpath(os.path.curdir) #e.g. .../04A_MoCo/04A_MoCo_nifti
+
     nifti_list = np.array(os.listdir(nifti_dir))
+    print 'List of nifti files found:'
     print(nifti_list)
-    #In order to not include '.DS_store'
+    #In order to not include '.DS_store:'
     epi_list = []
     gems_list = []
     for file in nifti_list:
@@ -49,25 +53,23 @@ if __name__ == "__main__":
         if file.startswith('gems'):
             gems_list.append(file)
 
-    os.chdir(nifti_dir)
-    print os.path.realpath(os.path.curdir)
-
     # First find the middle epi and use it as ref_vol.nii
     num_epis = len(epi_list)
-    #take middle TR of the epi
-    mid_epi = epi_list[num_epis//2]
-    print('Creating reference volume from middle epi volume')
+    mid_epi_index=num_epis//2
+    print('-------------------------------------------------------------------')
+    print('Creating reference volume from middle epi volume ' + str(mid_epi_index) + ' out of ' + str(num_epis))
+    mid_epi = epi_list[mid_epi_index]
     epi_mid_dir = os.path.splitext(os.path.splitext(mid_epi)[0])[0]
-    os.chdir(dicom_dir + epi_mid_dir)
-    print os.path.realpath(os.path.curdir)
-
-    # Find middle dicom file and convert it to nifti
-    mid_dicom_dir = dicom_dir + '/' +  mid_epi[:-7]  # take off .nii.gz file extension
-    mid_dicom_list = np.array(os.listdir(mid_dicom_dir))
-    mid_mid_dicom = str(len(mid_dicom_list)//2)
+    mid_epi_dir = dicom_dir + epi_mid_dir
+    os.chdir(mid_epi_dir)
+    print('For that, moving to ' + mid_epi_dir) #e.g. .../04A_MoCo/04A_MoCo_dicom/epi02_retino_13
+    mid_dicom_list = np.array(os.listdir(mid_epi_dir))
     middle_total_TR = len(mid_dicom_list)//2
-    print('For that, executing dcm2nii on ' + mid_mid_dicom + ' dicom of ' + mid_epi)
-    os.system('dcm2nii -g N -v N *' + mid_mid_dicom + '.dcm')
+    mid_mid_dicom = mid_dicom_list[len(mid_dicom_list)//2]
+
+    print('and executing dcm2niix on ' + mid_mid_dicom + ' (dicom ' + str(middle_total_TR) +  ') of ' + epi_mid_dir)
+    print('-------------------------------------------------------------------')
+    os.system('dcm2niix -z n -s y -t y -x n -v n ' + mid_mid_dicom) #non-zipped single file
     os.system('mv *.nii ref_vol.nii')
             
     #Move ref_vol to nifti directory

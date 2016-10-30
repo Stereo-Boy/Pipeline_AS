@@ -28,31 +28,27 @@ if __name__ == "__main__":
     sess_name = os.path.split(sess_dir)[1]
     #switch to session directory:
     os.chdir(sess_dir)
-    print("Working in directory " + sess_dir)
-
-    #retrieve a list of all directories there and find the ones starting with epi
+    dir_list = np.array(os.listdir('.')) 
+    #In order to not include '.DS_store'
     epi_list = []
     gems_list = []
-    for file in np.array(os.listdir('.')):
+    for file in dir_list:
         if file.startswith('epi'):
             epi_list.append(file)
         elif file.startswith('gems'):
             gems_list.append(file)
     dir_list = epi_list + gems_list
-    print 'dicom2vista_org detected the following epi/gems directories'
-    print dir_list
-
     #Make the expected directory structure
     try:
         os.mkdir(sess_name+'_backup')
         os.mkdir(sess_name+'_dicom')
         os.mkdir(sess_name+'_nifti')
         #Copy everything into the backups directory
-        print("Creating backup, dicom and nifti folders")
+        print("Making backups")
         for this_dir in dir_list:
             os.system('cp -r ' + this_dir + ' ' + sess_name + '_backup/')
     except:
-        print("Backup, dicom and nifti folders already exist")
+        print("Directories already exist")
     #Directory names
     backup_dir = sess_dir + '/' + sess_name + '_backup/'
     dicom_dir = sess_dir + '/' + sess_name + '_dicom/'
@@ -60,21 +56,15 @@ if __name__ == "__main__":
     
     # Convert dicom to nifti
     for this_dir in dir_list: 
+        print("Processing files in " + this_dir)
         os.chdir(sess_dir + '/' + this_dir)
-        print("Converting dicom files to nifti using dcm2niix in " + this_dir)
+        print("Converting dicom files to nifti")
         
-        #Run dcm2niix in order to do the conversion:
+        #Run dcm2nii in order to do the conversion:
         if os.path.exists(this_dir + 'nii.gz') == False:
             print os.path.realpath(os.path.curdir)
-            os.system('dcm2niix -z y -s n -t y -x n -v n ' + os.path.realpath(os.path.curdir))
-            # -z y : gzip the files
-            # -s n : convert all images in folder
-            # -t y : save a text note file
-            # -x n : do not crop
-            # -v n : no verbose
-            # last term: output directory
-            
-        #Change the name of the new nii.gz file to match the directory name:
+            os.system('dcm2nii -f *.dcm* this_dir')
+        #Change the name of the new nii.gz file to match the directory name: 
         try:
             os.system('mv *.nii.gz ' + this_dir + '.nii.gz')
         except:

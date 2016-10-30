@@ -1,4 +1,4 @@
-function kb_initializeVista2(sess_path, subj)
+function kb_initializeVista2_retino(sess_path, subj)
 % from kb_initializeVista.m
 % 
 % Kelly Byrne | 09.22.14
@@ -40,14 +40,19 @@ end
 % end
  
 inplane_file = fullfile(sess_path, 'nifti','gems.nii.gz');
-disp('Gems file detected:')
+disp('Gems file:')
 disp(inplane_file);
 assert(exist(inplane_file, 'file')>0)
  
+
 anat_file = fullfile(sess_path, 'nifti', 'mprage.nii.gz');
-disp('Mprage file detected:')
+disp('Mprage file ')
 disp(anat_file)
-assert(exist(anat_file, 'file')>0)
+try
+ assert(exist(anat_file, 'file')>0)
+catch
+    disp('Could not find mprage (OK because it is retino branch)')
+end
 
 % create params struct and specify desired parameters 
 params = mrInitDefaultParams; 

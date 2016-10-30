@@ -11,5 +11,5 @@ function output=dateTime
     currentTime = clock;
     ye = currentTime(1); mo = currentTime(2); da = currentTime(3);
     ho = currentTime(4); mi = currentTime(5); se = currentTime(6);
-    output=sprintf('Date and Time:\t%2d/%2d/%4d\t%2d:%2d:%2.0f', da, mo, ye, ho, mi, se);
+    output=sprintf('Date and Time (international style):\t%2d/%2d/%4d\t%2d:%2d:%2.0f', da, mo, ye, ho, mi, se);
 end

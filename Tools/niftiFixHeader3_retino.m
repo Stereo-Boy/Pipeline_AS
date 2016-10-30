@@ -3,6 +3,8 @@ function niftiFixHeader3_retino(dataDir)
 % Kelly Byrne
 % modified version - Adrien Chopin, 2015
 
+%McFLIRT is loosing infos in the header and we want that info back
+
 disp('[niftiFixHeader] WARNING - this is a version specific to analysing Adrien''s experiment with vistasoft 2015 and pipeline_AS.')
 disp('RETINOTOPY BRANCH')
 disp('Check the params of your scanning sessions before proceeding (press a key).')
@@ -54,7 +56,7 @@ if numel(niiFileList)>0
             ni.freq_dim = 1; % x is 1, y is 2, z is 3 - in neurology, this is L <-> R; P <-> A; I <-> S - but this does not seem to really matter
             ni.phase_dim = 2; 
             ni.slice_dim = 3;
-            ni.slice_end = 23; %(number of slices-1)
+            ni.slice_end = ni.dim(ni.slice_dim)-1; %(number of slices-1)
             if length(ni.pixdim)>3 % pixdim(4) = TR    %EPI
                 TR = ni.pixdim(4);
             else %GEMS
@@ -77,7 +79,7 @@ if numel(niiFileList)>0
             ni.freq_dim = 1; 
             ni.phase_dim = 2;
             ni.slice_dim = 3;
-            ni.slice_end = 159; %(number of slices-1) 
+            ni.slice_end = ni.dim(ni.slice_dim)-1; %(number of slices-1) 
             ni.slice_duration = 0; % it has to be 0 to avoid slice timing correction and some further error
             %ni.dim(4) = 1; %to avoid a warning
             %ni.pixdim(4) = 1; %to avoid a warning
@@ -95,7 +97,7 @@ if numel(niiFileList)>0
             ni.freq_dim = 1; 
             ni.phase_dim = 2;
             ni.slice_dim = 3;
-            ni.slice_end = 255; %(number of slices-1) after conversion to isotropic conformed space which is 256^3
+            ni.slice_end = ni.dim(ni.slice_dim)-1; %(number of slices-1) after conversion to isotropic conformed space which is 256^3
             ni.slice_duration = 0; % it has to be 0 to avoid slice timing correction and some further error
             %ni.dim(4) = 1; %to avoid a warning
             %ni.pixdim(4) = 1; %to avoid a warning

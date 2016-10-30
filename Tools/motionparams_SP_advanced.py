@@ -73,9 +73,9 @@ if __name__ == "__main__":
         print('Loading volume dimensions from file')
         brain_dims = np.loadtxt('brainDimsInfo.txt')
     else:
-        #otherwise, using average dimensions from this website
+        #otherwise, using average dimensions from this website, assuming
         #https://faculty.washington.edu/chudler/facts.html
-        brain_dims = np.array([167.,93.,140.]) #average brain, for testing, in mm (x L-R / z I-S/ y A-P)
+        brain_dims = np.array([140.,93.,167.]) #average brain dimensions in mm (our epi are oriented RAS, i.e.: x L->R / y P->A / z I->S)
     print "Brain/Volume dimensions are %s" % brain_dims
     brain_dims = brain_dims/2
 
@@ -158,8 +158,11 @@ if __name__ == "__main__":
     epiNb=0
     for folder in dir_list:
         if folder.startswith('epi'):
-            dicom_files = os.listdir(dicom_dir + '/' + folder)
-            num_TRs_per_epi.append(len(dicom_files))
+            dicom_files=0
+            for file in os.listdir(dicom_dir + '/' + folder + '/'):
+                if file.endswith(".dcm"):
+                    dicom_files += 1
+            num_TRs_per_epi.append(dicom_files)
             epiNb += 1
     print "Number of EPI %s" % epiNb
     print "Number of TRs per epi %s" % num_TRs_per_epi

@@ -11,15 +11,21 @@ function xform = alignment_AS(sessionDir, vol, ref, ipath, steps, iter)
 % sessionDir : string full path to mrvista session directory (default is pwd)
 % vol : string full path to volume file (e.g. MV40_nu_RAS_NoRS.nii.gz file)
 % ref : string full path to reference file (e.g. gems.nii.gz file)
+<<<<<<< Updated upstream
 % ipath : string full path to folder containing .dcm files for ref file
 % steps : [optional] numeric array corresponding to the above steps to be run [default=1:4]
 % iter : [optional] number of fine alignment iterations (spm_coreg) [default=1]
 %
+=======
+% ipath: a path to Raw/Anatomy/Inplane/(copies of initial dcm files)
+
+>>>>>>> Stashed changes
 % Outputs:
 % xform : realignment transformation matrix (also saved to mrSESSION.mat file)
 %
 % Created by Justin Theiss 10/16
 %(adapted from mrvista rxFineMutualInf and rxFineNestares)
+
 
 % init vars
 if ~exist('sessionDir','var')||isempty(sessionDir), sessionDir = pwd; end;

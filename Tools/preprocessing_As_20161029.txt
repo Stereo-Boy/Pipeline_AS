@@ -1,0 +1,76 @@
+Date and Time (international style):	29/10/2016	15:51:16
+ --------------   CHECKLIST BEFORE STARTING   -----------------
+- DICOM files should be in the subject folder in a folder called 01_Raw_DICOM
+- PAR files should be in the folder 01_PAR (except for the retino branch)
+- Epi, in 01_Raw_DICOM, should be in folders called epi01-whatever, epi02-whatever, ....
+- Gems, in 01_Raw_DICOM, should be in folders called gems-whatever (no capital)
+- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whatever (no capital).
+- You should be in the subject folder for the subject that you want to analyse
+Is it all correct? 1 = ESC; Enter = OK {Operation terminated by user during <a href="matlab:helpUtils.errorDocCallback('preprocessing_AS', '/Users/adrienchopin/Desktop/Pipeline_AS/Modules/preprocessing_AS.m', 25)" style="font-weight:bold">preprocessing_AS</a> (<a href="matlab: opentoline('/Users/adrienchopin/Desktop/Pipeline_AS/Modules/preprocessing_AS.m',25,0)">line 25</a>)
+
+} 
+preprocessing_AS('test')
+Date and Time (international style):	29/10/2016	15:53:27
+ --------------   CHECKLIST BEFORE STARTING   -----------------
+- DICOM files should be in the subject folder in a folder called 01_Raw_DICOM
+- PAR files should be in the folder 01_PAR (except for the retino branch)
+- Epi, in 01_Raw_DICOM, should be in folders called epi01-whatever, epi02-whatever, ....
+- Gems, in 01_Raw_DICOM, should be in folders called gems-whatever (no capital)
+- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whatever (no capital).
+- You should be in the subject folder for the subject that you want to analyse
+Is it all correct? 1 = ESC; Enter = OK Please enter how many EPI are you expecting to be processed: 2
+Loaded pathFile.mat from /Users/adrienchopin/Desktop/Pipeline_AS/Users/Adrien/pathFile.mat
+For convenience, the pipeline allows you to have two different branches, one run for normal scans, and one for retinotopy scans. Which one do you want
+1. Normal scans
+2. Retino scans
+Answer: 2
+Retinotopy branch
+***********       STARTING PIPELINE  AT  Date and Time (international style):	29/10/2016	15:53:30 for subjectID test       *******************
+Subject folder is : /Users/adrienchopin/Desktop/Pipeline_AS/Tools
+Subject folder exists
+Pipeline_AS folder is : /Users/adrienchopin/Desktop/Pipeline_AS
+Pipeline_AS folder exists
+************************************************************************************************************************
+Tools folder exists
+Your system path is (it should be the line added at beginning of the matlab file):
+/usr/bin:/bin:/usr/sbin:/sbin:/Applications/freesurfer/bin:/Applications/freesurfer/fsfast/bin:/Applications/freesurfer/tktools:/usr/local/fsl/bin:/Applications/freesurfer/mni/bin:/Users/adrienchopin/Desktop/Pipeline_AS/Tools:/Applications/freesurfer/bin:/Applications/freesurfer/mni/bin:/Applications/MRIcroGL:/usr/local/fsl/bin:/usr/local/fsl/etc/fslconf/:/usr/local/fsl:/Library/Frameworks/Python.framework/Versions/3.4/bin:/etc/bin:/usr/X11/bin:/usr/local/fsl/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin
+------------------------------------------------------------------------------------------------------------------------
+Testing whether dcm2niix is found (you should see Chris Rordens dcm2nii help below):
+Compression will be faster with /usr/local/bin/pigz
+Chris Rorden's dcm2niiX version 10oct2016o (64-bit MacOS)
+usage: dcm2niix [options] <in_folder>
+ Options :
+  -b : BIDS sidecar (y/n, default n)
+  -f : filename (%a=antenna  (coil) number, %c=comments, %d=description, %e echo number, %f=folder name, %i ID of patient, %m=manufacturer, %n=name of patient, %p=protocol, %s=series number, %t=time, %u=acquisition number, %z sequence name; default 'epi01')
+  -h : show help
+  -m : merge 2D slices from same series regardless of study time, echo, coil, orientation, etc. (y/n, default n)
+  -o : output directory (omit to save to input folder)
+  -s : single file mode, do not convert other images in folder (y/n, default n)
+  -t : text notes includes private patient details (y/n, default n)
+  -v : verbose (y/n, default n)
+  -x : crop (y/n, default n)
+  -z : gz compress images (y/i/n, default y) [y=pigz, i=internal, n=no]
+ Defaults file : /Users/adrienchopin/.dcm2nii.ini
+ Examples :
+  dcm2niix /Users/chris/dir
+  dcm2niix -o /users/cr/outdir/ -z y ~/dicomdir
+  dcm2niix -f mystudy%s ~/dicomdir
+  dcm2niix -o "~/dir with spaces/dir" ~/dicomdir
+----------- END OF STARTING CHECKS --------------------
+---------       01-02  FILE ORGANISATION AND NIFTI CONVERSION (Date and Time (international style):	29/10/2016	15:53:30)         ---------------------------------------------------------
+{Error using <a href="matlab:helpUtils.errorDocCallback('preprocessing_AS', '/Users/adrienchopin/Desktop/Pipeline_AS/Modules/preprocessing_AS.m', 100)" style="font-weight:bold">preprocessing_AS</a> (<a href="matlab: opentoline('/Users/adrienchopin/Desktop/Pipeline_AS/Modules/preprocessing_AS.m',100,0)">line 100</a>)
+Missing Raw DICOM folder in Subject folder...
+} 
+preprocessing_AS('test')
+Date and Time (international style):	29/10/2016	17: 8:42
+ --------------   CHECKLIST BEFORE STARTING   -----------------
+- DICOM files should be in the subject folder in a folder called 01_Raw_DICOM
+- PAR files should be in the folder 01_PAR (except for the retino branch)
+- Epi, in 01_Raw_DICOM, should be in folders called epi01-whatever, epi02-whatever, ....
+- Gems, in 01_Raw_DICOM, should be in folders called gems-whatever (no capital)
+- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whatever (no capital).
+- You should be in the subject folder for the subject that you want to analyse
+Is it all correct? 1 = ESC; Enter = OK Please enter how many EPI are you expecting to be processed: {Operation terminated by user during <a href="matlab:helpUtils.errorDocCallback('preprocessing_AS', '/Users/adrienchopin/Desktop/Pipeline_AS/Modules/preprocessing_AS.m', 27)" style="font-weight:bold">preprocessing_AS</a> (<a href="matlab: opentoline('/Users/adrienchopin/Desktop/Pipeline_AS/Modules/preprocessing_AS.m',27,0)">line 27</a>)
+
+} 
+preprocessing_AS('test')
