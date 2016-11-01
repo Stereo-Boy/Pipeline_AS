@@ -11,6 +11,11 @@ function whiteMatterSegment_AS(subjectID)
 % 
 % This allows either itkGray or mrGray file conversion based on user input.
 % ------------------------------------------------------------------------------------------------------------
+c=clock;
+diaryFile = [num2str(c(1)),num2str(c(2)),num2str(c(3)),'whiteMatterSegment_AS.txt'];
+diary(diaryFile);
+diary ON
+disp(dateTime)
 
 %% FOLDER SETUP AND INITIAL CHECKS
 disp('You should be in the 06_mrVista_session folder for the subject that you are analyzing.');
@@ -20,35 +25,50 @@ beep; pause
 if strcmpi(theFolder,'06_mrVista_session')==0; error('You are not in the mrVista session folder...'); end
 
 %define subject ID
-if ~exist('subjectID','var'); beep; subjectID = input('Enter subject ID:','s'); end
+if ~exist('subjectID','var'); beep; subjectID = input('Enter subject ID:','s'); else disp(['subject ID is: ',  subjectID]); end
 
 mrVistaFolder = cd;
 mprageFile = [mrVistaFolder '/nifti/mprage.nii.gz'];
+if exist(mprageFile)==0
+    error('Mprage file missing (if you run retino branch, please copy the file from main branch') 
+else
+    disp('Mprage file correctly detected in nifti folder')
+end
 
 %make new segmentation folder inside the mrVista session folder
 if ~(exist([mrVistaFolder '/Segmentation'],'dir')==7)
+    disp('Creating Segmentation folder in mrVista_Session folder')
     mkdir(mrVistaFolder,'Segmentation');
+else
+    warning('Be careful: segmentation folder in mrVista_Session folder already exists and it contains those files:');
+    cd([mrVistaFolder '/Segmentation'])
+    ls
+    cd(mrVistaFolder)
 end
 destinationFolder = [mrVistaFolder '/Segmentation'];
 
 %if exist('mrRxSettings.mat','file')==2
 disp('--------      WHITE MATTER SEGMENTATION PIPELINE              --------');
-%     disp(' ');
-% else
-%     error('mrRxSettings.mat file not found.  Please align high-res and low-res anatomicals before continuing.');
-% end
 
 
 %% WHITE MATTER SEGMENTATION
 white_matter_seg = 1; %default is that this step will be run
-if exist([getenv('SUBJECTS_DIR') '/' subjectID],'dir')==7
+freeSurferSubjectFolder = [getenv('SUBJECTS_DIR') '/' subjectID];
+if exist(freeSurferSubjectFolder,'dir')==7
     disp(['A subject folder for this participant already exists in ' getenv('SUBJECTS_DIR')]);
-    beep; answer = input('Have you already run white matter segmentation for this participant? y(es) and skip it or n(o)','s');
+    disp('Have you already run white matter segmentation for this participant?')
+    beep; answer = input('1 - yes, skip the step, 2 - yes, delete the folder and redo, 3 - no, exit to check');
     disp(' ');
-    if strcmpi('y',answer)
+    if answer==1
         white_matter_seg = 0; %recon-all step will not be run
         disp('Skipping...')
-    elseif strcmpi('n',answer)
+    elseif answer==2
+        disp('Deleting the folder')
+        cd(freeSurferSubjectFolder)
+        status = rmdir(freeSurferSubjectFolder,'s');
+        if status==1; disp('Done'); else; warning('It did not happen but lets try to see'); end
+        cd(mrVistaFolder)
+    elseif answer==3
         error('Please change subjectID or delete subject folder and run white matter segmentation again.');
     else
         error('Input not understood.');

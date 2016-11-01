@@ -9,7 +9,8 @@ function preprocessing_AS(subjectID)
 % ------------------------------------------------------------------------------------------------------------
 clc
 c=clock;
-diary(['preprocessing_As_',num2str(c(1)),num2str(c(2)),num2str(c(3)),'.txt']);
+diaryFile = [num2str(c(1)),num2str(c(2)),num2str(c(3)),'preprocessing_AS.txt'];
+diary(diaryFile);
 diary ON
 disp(dateTime)
 
@@ -20,7 +21,8 @@ disp('- DICOM files should be in the subject folder in a folder called 01_Raw_DI
 disp('- PAR files should be in the folder 01_PAR (except for the retino branch)')
 disp('- Epi, in 01_Raw_DICOM, should be in folders called epi01-whatever, epi02-whatever, ....')
 disp('- Gems, in 01_Raw_DICOM, should be in folders called gems-whatever (no capital)')
-disp('- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage-whatever (no capital).')
+disp('- mprage, in 01_Raw_DICOM, should be in folders called gems_mprage (no capital).')
+disp('- Be sure that there is no space in folder or file names!')
 disp('- You should be in the subject folder for the subject that you want to analyse')
 beep; answer = input('Is it all correct? 1 = ESC; Enter = OK ','s');
 if str2double(answer) == 1; error('ESCAPE'); end
@@ -48,6 +50,7 @@ end
 % ------------------------------------------------------------------------------------------------------------
 
 % Naming conventions for the different folders in subject folder
+%BE SURE NONE OF THE FOLDER HAS A SPACE
 rawDICOMfolder = '01_Raw_DICOM';
 PARfolder = '01_PAR';
 rawBackup = '02_Raw_DICOM_Backup';
@@ -196,6 +199,28 @@ disp(['---------      03   REORGANISATION II   (',dateTime,')    ---------------
             [success, status]=rmdir([subject_folderDICOM,'/',rawDICOMfolder,'_backup'],'s'); if success; disp('Done');else error(status); end
             [success, status]=rmdir([subject_folderDICOM,'/',rawDICOMfolder,'_nifti'],'s');  if success; disp('Done');else error(status); end
             [success, status]=rmdir([subject_folderDICOM,'/',rawDICOMfolder,'_dicom'],'s');  if success; disp('Done');else error(status); end
+        cd(subject_folderNIFTI)
+        [matchMPRAGE,dummy] =  regexp(ls,'\w*mprage\w*\.nii\.gz','match','split'); %find all nii.gz files containing word mprage
+        if retino==0
+            disp(['Renaming gems_mprage (',matchMPRAGE{1},') to mprage.nii.gz'])    
+                 if numel(matchMPRAGE)>1
+                     error('More than one mprage file found...')
+                 else
+                     if strcmpi(matchMPRAGE{1},'mprage.nii.gz')==0
+                        [success, status]=movefile(matchMPRAGE{1},'mprage.nii.gz'); if success; disp('Done');else error(status); end
+                     else
+                        disp('Gems file is already called mprage.nii.gz.')
+                     end
+                 end
+        else
+            [matchMPRAGE,dummy] =  regexp(ls,'\w*mprage\w*\.nii\.gz','match','split'); %find all nii.gz files containing word mprage
+            if numel(matchMPRAGE)>0
+                disp('Retino branch: deleting mprage files that should not be here.')    
+                for i=1:numel(matchMPRAGE)
+                    delete(matchMPRAGE{i})
+                end
+            end
+        end
         disp('Finished REORGANISATION II ')
     else
         disp('Reorganisation II skipped')
@@ -237,8 +262,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             cd(preprocessPath) %if you have the file for updated motion correction, use it
             disp('Enhanced motion correction file motioncorrect_SP.py found in /Tools will be used.');
             disp('This will align all epi files to the middle volume of the middle epi.');
-            disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
-            beep; pause;
+           % disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
+           % beep; pause;
             disp('Starting...')
             success = system(['python motioncorrect_SP.py ', subject_folderMoco]);
         else 
@@ -305,7 +330,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                     success = system(['python motionparams_SP_advanced.py ', subject_folderMoco]);
                 end
                 if success==0 %GOOD
-                    disp('python motionparams_SP.py: DONE')
+                    disp('python motionparams_SP_advanced.py: DONE')
                     beep; answer5 = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
                     if strcmpi(answer5, 'n')==1; error('Something went wrong, according to you...');end
                 else %NOT GOOD
@@ -323,7 +348,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
         %CHECK SUCCESS here (presence of MCF FILES)
         %for that, find any file that matches ('*_mcf.nii.gz')
             cd(subject_folderMoco);
-            [match,dummy] =  regexp(ls,'epi+\w+_mcf\.nii\.gz','match','split');%find all nii.gz files containing word mcf
+            [match,dummy] =  regexp(ls,'epi+\w+_mcf\.nii\.gz','match','split');%find all ep-starting nii.gz files containing word mcf
             if isempty(match)==0; disp('Motion correction seems successful: mcf files detected.'); else error('Unsuccessful motion correction'); end
        disp('Finished MOTION CORRECTION')
     end
@@ -374,8 +399,8 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
             cd(preprocessPath); %if you have the file for updated motion correction, use it
             disp('Updated motion correction file found and will be used.');
             disp('This will align all epi files to the middle volume of the middle epi.');
-            disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
-            beep; pause;
+            %disp('Press any key to continue. Cancel the process if you wish to use a different motion correction method.');
+            %beep; pause;
             disp('Starting...')
             success = system(['python motioncorrect_SP.py ', subject_folderMocoCheck]); 
         else 
@@ -409,7 +434,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
                     success = system(['python motionparams_SP_advanced.py ', subject_folderMocoCheck]);
                 end
                 if success==0 %GOOD
-                    disp('python motionparams_SP.py: DONE')
+                    disp('python motionparams_SP_advanced.py: DONE')
                     beep; answer7 = input('Figure: Is everything OK? (y)es / (n)o: ', 's');
                     if strcmpi(answer7, 'n')==1; error('Something went wrong, according to you...');end
                 else %NOT GOOD
@@ -427,7 +452,7 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
         %CHECK SUCCESS here (presence of MCF_MCF FILES)
         %for that, find any file that matches ('*mcf_mcf.nii.gz')
             cd(subject_folderMocoCheck);
-            [match,dummy] =  regexp(ls,'epi+\w+mcf_mcf\.nii\.gz','match','split');%find all nii.gz files containing word mcf
+            [match,dummy] =  regexp(ls,'epi+\w+mcf_mcf\.nii\.gz','match','split');%find all epi_starting nii.gz files containing word mcf
             if isempty(match)==0; disp('Motion correction check seems successful: mcf files detected.'); else error('Unsuccessful motion correction check'); end
        disp('Finished MOTION CORRECTION CHECK')
     end
@@ -455,38 +480,28 @@ disp(['---------      04A   MOTION CORRECTION    (',dateTime,')   --------------
         if renaming1==1
             disp(['Creating ',niftiFixedFolder,' folder...'])
                 [success, status]=mkdir(subject_folderNiftiFx); if success; disp('Done');else error(status); end               
-            disp(['Copying moco nifti files to : ',niftiFixedFolder])
+            disp(['Copying moco epi and gems nifti files to : ',niftiFixedFolder])
                 cd(subject_folderMoco);
-                [match,dummy] =  regexp(ls,'epi+\w+_mcf\.nii\.gz','match','split');%find all nii.gz files containing word mcf
+                [match,dummy] =  regexp(ls,'epi+\w+_mcf\.nii\.gz','match','split');%find all epi nii.gz files containing word mcf
                 for i=1:numel(match)
-                   [success, status]=copyfile(match{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
+                   [success, status]=copyfile(match{i},subject_folderNiftiFx); if success; disp('Epi: Done');else error(status); end
                 end
-            disp(['Copying gems and mprage from nifti folder to: ',niftiFixedFolder])
+            [matchGEMS,dummy] =  regexp(ls,'\w*gems\w*_mcf\.nii\.gz','match','split'); %find all nii.gz files containing words gems and mcf
+                for i=1:numel(matchGEMS)
+                       [success, status]=copyfile(matchGEMS{i},subject_folderNiftiFx); if success; disp('Gems: Done');else error(status); end
+                end
+            disp(['Copying mprage from nifti folder to: ',niftiFixedFolder])
                 cd(subject_folderNIFTI);
                if retino==0
-                [matchMPRAGE,dummy] =  regexp(ls,'^((?<![co])\w*)mprage\w*\.nii\.gz','match','split'); %find all nii.gz files containing word mprage except ones starting by co and o
-                   for i=1:numel(matchMPRAGE)
-                       [success, status]=copyfile(matchMPRAGE{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
-                   end
-               else disp('Skipping mprage process for retino branch');
-               end
-                [matchGEMS,dummy] =  regexp(ls,'gems\w*\.nii\.gz','match','split'); %find all nii.gz files containing word gems
-
-                for i=1:numel(matchGEMS)
-                       [success, status]=copyfile(matchGEMS{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
-                end
-             if retino==0
-                    disp('Renaming mprage file to mprage.nii.gz')
-                      cd(subject_folderNiftiFx);
-                     if numel(matchMPRAGE)>1
-                         error('More than one mprage file found...')
-                     else
-                         [success, status]=movefile(matchMPRAGE{1},'mprage.nii.gz'); if success; disp('Done');else error(status); end
-                     end
-             else
-                 disp('Skipping mprage operations for retino branch')
-             end
-             disp('Renaming gems* file to gems.nii.gz')
+               % [matchMPRAGE,dummy] =  regexp(ls,'^((?<![co])\w*)mprage\w*\.nii\.gz','match','split'); %find all nii.gz files containing word mprage except ones starting by co and o
+                 %  for i=1:numel(matchMPRAGE)
+                     %  [success, status]=copyfile(matchMPRAGE{i},subject_folderNiftiFx); if success; disp('Done');else error(status); end
+                 %  end
+                 [success, status]=copyfile('mprage.nii.gz',subject_folderNiftiFx); if success; disp('mprage: Done');else error(status); end
+               else disp('Skipping mprage process for retino branch');              
+               end 
+                                             
+             disp('Renaming gems file to gems.nii.gz')
                   cd(subject_folderNiftiFx);
                  if numel(matchGEMS)>1
                      error('More than one gems file found...')

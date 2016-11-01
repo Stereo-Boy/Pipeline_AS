@@ -197,7 +197,7 @@ if __name__ == "__main__":
             #figuring out which EPI and TR the movement are from
             run_index = 0;
             TR = index
-            while TR>=0:
+            while TR>0:
                 TR = TR - int(num_TRs_per_epi[run_index])
                 run_index += 1
             TR += num_TRs_per_epi[run_index-1]
@@ -222,7 +222,7 @@ if __name__ == "__main__":
             #figuring out which EPI and TR the movement are from
             run_index = 0;
             TR = index
-            while TR>=0:
+            while TR>0:
                 TR = TR - int(num_TRs_per_epi[run_index])
                 run_index += 1
             TR += num_TRs_per_epi[run_index-1]
@@ -247,7 +247,7 @@ if __name__ == "__main__":
             #figuring out which EPI and TR the movement are from
             run_index = 0;
             TR = index
-            while TR>=0:
+            while TR>0:
                 TR = TR - int(num_TRs_per_epi[run_index])
                 run_index += 1
             TR = TR + num_TRs_per_epi[run_index-1]

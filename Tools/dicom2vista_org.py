@@ -82,9 +82,9 @@ if __name__ == "__main__":
             sys.exit()
  
     #After doing all that copy stuff into the right places:
+    print('Retrieving converted nifti files from those folders:')
     for this_dir in dir_list:
         os.chdir(sess_dir)
-        print os.path.realpath(os.path.curdir)
         os.system('mv ' + this_dir + ' ' + dicom_dir)
     
         os.chdir(dicom_dir + this_dir)
