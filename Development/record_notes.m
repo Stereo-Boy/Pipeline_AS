@@ -4,20 +4,24 @@ function record_notes(varargin)
 % Inputs:
 % 'on': turn diary on (or back on after suspension)
 % 'off': turn diary off
-% notes_dir: directory to store notes (as notes_dir/[date]/filename.txt)
-% filename: filename for saved .txt file in notes_dir/[date] directory
+% notes_dir: directory to store notes (default is pwd)
+% filename: filename for saved .txt file in notes_dir directory (default
+% will create date_time.txt file)
 % 
-% Outputs:
-% none
+% Outputs saved:
+% file within notes_dir saved as date_time_filename.txt containing command
+% window output
 % 
 % Example:
 % record_notes(pwd,'preprocessing');
 % disp('Preprocessing...');
 % record_notes('off');
+% disp('this is not recorded');
+% record_notes('on');
+% disp('this is recorded');
+% record_notes('off');
 %
 % Note: if 'on' or 'off' are input, only diary(input) will be run.
-% Furthermore, notes_dir and filename must both be input in order to create
-% the appropriate file.
 %
 % Created by Justin Theiss 11/2016
 
@@ -31,9 +35,7 @@ for x = 1:nargin,
         otherwise
             if ~exist('notes_dir','var') && exist(varargin{x},'dir'),
                 % set notes_dir
-                notes_dir = fullfile(varargin{x}, date);
-                % mkdir if needed
-                if ~exist(notes_dir, 'dir'), mkdir(notes_dir); end;
+                notes_dir = varargin{1};
             else
                 % set filename 
                 [~,filename] = fileparts(varargin{x});
@@ -42,16 +44,15 @@ for x = 1:nargin,
 end
 
 % init other vars
-if ~exist('filename','var'), return; end;
-if ~exist('notes_path','var'), notes_path = pwd; end;
+if ~exist('filename','var'), filename = ''; end;
+if ~exist('notes_dir','var'), notes_dir = pwd; end;
+
+% get date and time
+datetime = sprintf('%02.f_',fix(clock));
 
 % set fullpath file
-notes_path = fullfile(notes_dir, filename);
-
-% if another file has been created, append with number
-apnd = numel(dir([notes_path '*.txt']));
-if apnd == 0, apnd = ''; else apnd = num2str(apnd); end;
+notes_path = fullfile(notes_dir,[datetime filename '.txt']);
 
 % start diary
-diary([notes_path apnd '.txt']);
+diary(notes_path);
 return;
