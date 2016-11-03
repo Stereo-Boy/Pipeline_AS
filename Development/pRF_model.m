@@ -1,16 +1,15 @@
-function pRF_model(mr_dir, epi_dir, n_dum, params, overwrite)
+function pRF_model(mr_dir, epi_dir, params, overwrite)
 % pRF_model(mr_dir, epi_dir, n_dum, params, overwrite)
 %
 % Inputs:
 % mr_dir: string directory containing mrSESSION.mat file
 % epi_dir: string directory containing epi*.nii* files (default epi*.nii*
 % files in mr_dir/nifti)
-% n_dum: number of frames to remove from beginning of epi scans (default: 5)
 % params: structure of parameters for pRF model (default: see below)
 % overwrite: boolean true/false to overwrite any previous work
 % 
-% Outputs:
-% none
+% Outputs saved:
+% retModel*Fit.mat files that contain results from pRF model
 %
 % params default:
 %     params.analysis = struct('fieldSize',9.1,...
