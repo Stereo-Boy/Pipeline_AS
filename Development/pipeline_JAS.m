@@ -55,5 +55,5 @@ if isnumeric(stepList2run)
 else
     error('The step starter accepts only numeric descriptions.')
 end
-    
+    %TEST
     
