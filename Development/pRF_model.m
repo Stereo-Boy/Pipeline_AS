@@ -1,16 +1,15 @@
-function pRF_model(mr_dir, epi_dir, n_dum, params, overwrite)
+function pRF_model(mr_dir, epi_dir, params, overwrite)
 % pRF_model(mr_dir, epi_dir, n_dum, params, overwrite)
 %
 % Inputs:
 % mr_dir: string directory containing mrSESSION.mat file
 % epi_dir: string directory containing epi*.nii* files (default epi*.nii*
 % files in mr_dir/nifti)
-% n_dum: number of frames to remove from beginning of epi scans (default: 5)
 % params: structure of parameters for pRF model (default: see below)
 % overwrite: boolean true/false to overwrite any previous work
 % 
-% Outputs:
-% none
+% Outputs saved:
+% retModel*Fit.mat files that contain results from pRF model
 %
 % params default:
 %     params.analysis = struct('fieldSize',9.1,...
@@ -74,22 +73,6 @@ end
 d = dir(fullfile(epi_dir,'epi*.nii*'));
 files = fullfile(epi_dir,{d.name});
 
-% copy files to "original" folder
-if ~exist(fullfile(epi_dir,'original'),'dir'),
-    mkdir(fullfile(epi_dir,'original'));
-elseif overwrite % delete current files and copy from original 
-    copyfile(fullfile(epi_dir,'original','epi*.nii*'),epi_dir);
-    delete(fullfile(epi_dir,'original','epi*.nii*'));
-end
-copyfile(fullfile(epi_dir,'epi*.nii*'),fullfile(epi_dir,'original'));
-
-% remove first 5 frames of EPIs
-if overwrite,
-for x = 1:numel(files),
-    remove_dummies(files{x}, n_dum);
-end
-end
-
 % load session data
 cd(mr_dir);
 mrGlobals;
@@ -128,28 +111,4 @@ rmMain(VOLUME{1},[],3);
 
 % close figures and return to previous dir
 cd(curdir);
-
-function remove_dummies(fileName,n_dum)
-% Remove dummy volumes from beginning of given file.
-%
-% Inputs:
-% fileName - full path to file for which to remove dummy volumes
-% n_dum - number of dummy volumes to remove (from beginning)
-% 
-% Outputs:
-% none
-%
-% requires: readFileNifti, writeFileNifti (from vista)
-
-% get nifti struct
-ni = readFileNifti(fileName);
-
-% remove first n_dum frames
-ni.data(:,:,:,1:n_dum) = [];
- 
-% update dim
-ni.dim = size(ni.data);
-
-% write file
-writeFileNifti(ni);
 
