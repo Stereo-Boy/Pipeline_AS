@@ -5,6 +5,7 @@ function pipeline_JAS(stepList2run)
 % run
 % If stepList2run is not defined, it will show a menu of all steps and asks
 % for an answer.
+% TEST
 %
 % Steps available to run:
 %   0. All of the below steps
