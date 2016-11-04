@@ -4,7 +4,8 @@ function pipeline_JAS(stepList2run)
 % stepList2run is a list of numbers corresponding to the possible steps to
 % run
 % If stepList2run is not defined, it will show a menu of all steps and asks
-% for an answer
+% for an answer.
+% TEST
 %
 % Steps available to run:
 %   0. All of the below steps
