@@ -4,24 +4,24 @@ function warning_error(varargin)
 %
 % Inputs:
 % string or number inputs to be concatenated (can include special chars)
-% 'forceError': throw an error with string message (default 'noError')
+% 'errorON': throw an error with string message (default 'errorOFF')
 % 'verboseOFF': do not throw warning (default 'verboseON')
 %
 % Example 1: throw an error to stop function
-% warning_error('This is the ',2,'nd error!','forceError')
+% warning_error('This is the ',2,'nd error!','errorON')
 % 
 % Error using warning_error (line 37)
 % This is the 2nd error!
 %
 % Example 2: throw a multiline warning without error
-% warning_error('A \n ',2,' line warning','noError')
+% warning_error('A \n ',2,' line warning','errorOFF')
 % 
 % Warning: A
 % 2 line warning 
 % > In warning_error at 54 
 %
 % Example 3: ignore error and warning
-% warning_error('this will not display','noError','verboseOFF')
+% warning_error('this will not display','errorOFF','verboseOFF')
 %
 % Created by Justin Theiss 11/2016
 
@@ -32,13 +32,13 @@ if nargin==0, return; end;
 S = warning;
 warning('on');
 
-% check for 'forceError'
-if ~any(strcmpi(varargin,'forceError')), % noError (default)
-    err = 'noError';
-    varargin(strcmpi(varargin,'noError')) = [];
-else % forceError
-    err = 'forceError';
-    varargin(strcmpi(varargin,'forceError')) = [];
+% check for 'errorON'
+if ~any(strcmpi(varargin,'errorON')), % errorOFF (default)
+    err = 'errorOFF';
+    varargin(strcmpi(varargin,'errorOFF')) = [];
+else % errorON
+    err = 'errorON';
+    varargin(strcmpi(varargin,'errorON')) = [];
 end
 % check for 'verboseOFF'
 if ~any(strcmpi(varargin,'verboseOFF')), % verboseON (default)
@@ -56,7 +56,7 @@ for i = 1:numel(varargin),
 end
 
 % error
-if strcmp(err,'forceError'),
+if strcmp(err,'errorON'),
     error(sprintf(string));
 % warning
 elseif strcmp(verbose,'verboseON'),
