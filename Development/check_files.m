@@ -1,4 +1,4 @@
-function tf = check_files(folder, expr, n, forceError, verbose)
+function [tf, nbFiles] = check_files(folder, expr, n, forceError, verbose)
 %  tf = check_files(folder, expr, n, forceError, verbose)
 % Check if number of files of certain expression exist.
 % 

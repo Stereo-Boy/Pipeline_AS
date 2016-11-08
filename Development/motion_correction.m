@@ -19,15 +19,19 @@ function motion_correction(mc_dir, expr, type, varargin)
 % *_mcf.nii.gz files are the motion corrected files
 % *_mcf.par files contain the motion parameters
 % 
-% Example 1: motion correct all nifti files in pwd using epi03 as reference
+% Example 1: motion correct all files in pwd using epi03 as reference
 % motion_correction(pwd, [], 'reffile', 'epi03_retino_14.nii.gz')
 %
-% Example 2: motion correct epi files to the middle vol of each input file
+% Example 2: motion correct epi nifti files to the middle vol of each input file
 % motion_correction(pwd, 'epi*.nii*', 'refvol')
 %
-% Example 2: motion correct gems file to mean of a specific file
+% Example 3: motion correct gems file to mean of a specific file
 % motion_correction(pwd, 'gems*.nii*', 'meanvol', 'epi03_retino_14.nii.gz')
 %
+% Example 4: motion correct all nifti files in pwd using middle TR of
+% middle epi
+% motion_correction(pwd, '*.nii*', 'reffile')
+
 % Created by Justin Theiss 11/2016
 
 % init defaults
@@ -48,13 +52,13 @@ files = fullfile(mc_dir,{d.name});
 
 switch type
     case 'reffile'
-        if isempty(varargin), % default
+        if isempty(varargin), % default takes the middle epi
             n_file = round(numel(files) / 2);
             ni = readFileNifti(files{n_file});
         else % load from varargin{1}
             ni = readFileNifti(varargin{1});
         end
-        % if no second arg, default is n/2
+        % if no second arg, default is TR n/2
         if numel(varargin) < 2,
             n_vol = round(ni.dim(end) / 2);
         else % otherwise set to varargin{2}
@@ -67,12 +71,16 @@ switch type
         % write ref_vol
         ni.fname = 'ref_vol.nii.gz';
         writeFileNifti(ni);
+        copy_files(cd,'ref_vol.nii.gz',mc_dir,'verboseOFF')
         % set fsl_arg
         fsl_arg = ['"' fullfile(mc_dir,ni.fname) '"'];
+        
     case 'refvol'
         % using vol within file (default is middle vol)
         if ~isempty(varargin),
             fsl_arg = num2str(varargin{1});
+        else
+            disp('what happens here?')
         end
     case 'meanvol'
         % if input, create mean of input file
@@ -98,5 +106,5 @@ end
 % run mcflirt 
 for x = 1:numel(files),
     system(['mcflirt -' type ' ' fsl_arg ' -plots -report -cost mutualinfo'...
-    ' -smooth 16 -in ' files{x}]);
+    ' -smooth 16 -in "' files{x},'"']);
 end
