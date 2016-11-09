@@ -7,7 +7,7 @@ function motion_correction(mc_dir, expr, type, varargin)
 % type: string option for type of reference for motion correction, one of
 % the following:
 %   'reffile' - uses reference 3d file. additional inputs can be specific
-%               filename and index of volume  to create image (default is
+%               filename and index of volume to create image (default is
 %               middle file and middle volume, respectively)
 %   'refvol'  - uses reference volume of each input file. additional inputs
 %               can be index of volume (default is n/2)
@@ -69,11 +69,11 @@ switch type
         ni.dim = size(ni.data);
         ni.ndim = numel(ni.dim);
         % write ref_vol
-        ni.fname = 'ref_vol.nii.gz';
+        ni.fname = fullfile(mc_dir,'ref_vol.nii.gz');
         writeFileNifti(ni);
-        copy_files(cd,'ref_vol.nii.gz',mc_dir,'verboseOFF')
+        %copy_files(cd,'ref_vol.nii.gz',mc_dir,'verboseOFF')
         % set fsl_arg
-        fsl_arg = ['"' fullfile(mc_dir,ni.fname) '"'];
+        fsl_arg = ['"' ni.fname '"'];
         
     case 'refvol'
         % using vol within file (default is middle vol)
@@ -94,10 +94,10 @@ switch type
             ni.dim = size(ni.data);
             ni.ndim = numel(ni.dim);
             % write ref_vol
-            ni.fname = 'ref_vol.nii.gz';
+            ni.fname = fullfile(mc_dir,'ref_vol.nii.gz');
             writeFileNifti(ni);
             % set fsl_arg
-            fsl_arg = ['"' fullfile(mc_dir,ni.fname) '"'];
+            fsl_arg = ['"' ni.fname '"'];
         end
     otherwise % error
         error('Unknown option');

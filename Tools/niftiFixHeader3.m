@@ -34,7 +34,7 @@ cd(dataDir)
    fileListName = {fileList.name};
    niiFileList={}; %this is a list of nii files for that dir
    for i = 1:numel(fileListName)
-       if numel(fileListName{i})>5 && strcmp(fileListName{i}(end-5:end),'nii.gz')==1 %min of 6 letters for the name
+       if numel(fileListName{i})>5 && strcmpi(fileListName{i}(end-5:end),'nii.gz')==1 %min of 6 letters for the name
            niiFileList{end+1} = fileListName{i};
        end
    end
@@ -46,7 +46,7 @@ if numel(niiFileList)>0
     for j=1:numel(niiFileList)
         ni = readFileNifti(niiFileList{j});
        % if ismember(ni.descrip,{'GEMS_stam','epi_stam'})
-       if numel(ni.fname)>3 && strcmp(ni.fname(1:3),'epi') || strcmp(ni.fname(1:4),'gems')
+       if numel(ni.fname)>3 && strcmpi(ni.fname(1:3),'epi') || strcmpi(ni.fname(1:4),'gems')
             ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
             ni.sform = 1; %you could decide differently
             %However, if method 2 was used on your nifti conversion, you will get
@@ -69,7 +69,7 @@ if numel(niiFileList)>0
             writeFileNifti(ni);
             disp(['EPI or GEMS file ', niiFileList{j},' is fixed'])
             checkNifti(niiFileList{j})
-       elseif (numel(ni.fname)>5 && strcmp(ni.fname(1:6),'mprage')) %initial mprage
+       elseif (numel(ni.fname)>5 && strcmpi(ni.fname(1:6),'mprage')) %initial mprage
             ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
             ni.sform = 1; %you could decide differently
             %However, if method 2 was used on your nifti conversion, you will get
@@ -86,8 +86,8 @@ if numel(niiFileList)>0
             writeFileNifti(ni);
             disp(['MPRAGE file ', niiFileList{j},' is fixed'])
             checkNifti(niiFileList{j})
-       elseif (numel(ni.fname)>18 && strcmp(ni.fname(end-18:end),'_nu_RAS_NoRS.nii.gz'))||...
-               (numel(ni.fname)>7 && strcmp(ni.fname(1:8),'t1_class')) %MPRAGE
+       elseif (numel(ni.fname)>18 && strcmpi(ni.fname(end-18:end),'_nu_RAS_NoRS.nii.gz'))||...
+               (numel(ni.fname)>7 && strcmpi(ni.fname(1:8),'t1_class')) %MPRAGE
             ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
             ni.sform = 1; %you could decide differently
             %However, if method 2 was used on your nifti conversion, you will get
