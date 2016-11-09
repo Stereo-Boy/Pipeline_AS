@@ -87,8 +87,20 @@ if ~exist('fld','var'), fld = ''; end;
 if ~exist('expr','var'), expr = ''; end;
 if ~exist('ck','var'), ck = ''; end;
 
-% get number of files
-n = numel(dir(fullfile(fld,expr)));
+% dir files
+d = dir(fullfile(fld,expr));
+
+% if fld/expr, get only files
+if ~isempty(fld) && ~isempty(expr),
+    d = d(~[d.isdir]);
+    ftype = 'files';
+else % get only folders
+    d = d([d.isdir]);
+    ftype = 'folders';
+end
+
+% get number of files/folders
+n = numel(d);
 
 % if checking number
 if ~isempty(ck),
@@ -98,7 +110,7 @@ else % check for > 0
 end
 
 % set result
-result = sprintf('%s\nfiles found: %d, expected: %d',fullfile(fld,expr),n,ck);
+result = sprintf('%s\n%s found: %d, expected: %d',fullfile(fld,expr),ftype,n,ck);
 
 % if false, warn/error
 if ~tf,
