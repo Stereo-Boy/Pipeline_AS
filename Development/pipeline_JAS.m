@@ -82,7 +82,12 @@ try
     dispi(dateTime, verbose)
     dispi('Subject folder root is: ', subj_dir, verbose)
     dispi('Subject ID is: ', subjID, verbose)
+    
+    %load subject parameters
     cd(subj_dir)
+    success = check_files(subj_dir, 'expectedParametersForPipeline.m', 1, 0, verbose);
+    if success==0, dispi('The parameter file expectedParametersForPipeline could not /n',...
+            'be found in the subject directory, where it should be. Template file might be used instead: ',parameterFile, verbose); end
     param=expectedParametersForPipeline(verbose);
     dispi('Current expected parameters are: ')
     disp(param)
@@ -102,14 +107,19 @@ try
     
     %defines standard folders for each step
     mprageDICOMfolder = fullfile(subj_dir,'01a_mprage_DICOM');
-    epiRetinoDICOMfolder = fullfile(subj_dir,'01b_epi_retino_DICOM');
-    epiExpDICOMfolder = fullfile(subj_dir,'01c_epi_exp_DICOM');
-    epiExpPARfolder = fullfile(subj_dir,'01d_epi_exp_PAR');
     mprageNiftiFolder = fullfile(subj_dir,'02_mprage_nifti');
     mprageNiftiFixedFolder = fullfile(subj_dir,'03_mprage_nifti_fixed');
     mprageSegmentedFolder = fullfile(subj_dir,'04_mprage_segmented');
+    
+    epiRetinoDICOMfolder = fullfile(subj_dir,'01b_epi_retino_DICOM');
     epiRetinoNiftiFolder = fullfile(subj_dir,'05_epi_retino_nifti_folder');
     epiRetinoMCfolder = fullfile(subj_dir,'06_epi_retino_MC_folder');
+    
+    epiExpDICOMfolder = fullfile(subj_dir,'01c_epi_exp_DICOM');
+    epiExpPARfolder = fullfile(subj_dir,'01d_epi_exp_PAR');
+    epiExpNiftiFolder = fullfile(subj_dir,'05_epi_retino_nifti_folder');
+    epiExpMCfolder = fullfile(subj_dir,'06_epi_retino_MC_folder');
+    
     dispi(' --------------------------  End of pipeline initialization  ----------------------------------------', verbose)
     
 % ---------- PIPELINE STEP CHECKS --------------------------------------------------------------------------------------------------
@@ -216,14 +226,12 @@ try
                 remove_previous(epiRetinoNiftiFolder, verbose); %remove older runs of that code
                 check_folder(epiRetinoNiftiFolder,0, verbose); %check we have an output nifit folder or creates it
                 success = system(['dcm2niix -z y -s n -t y -x n -v n -f "%p%s" -o "', epiRetinoNiftiFolder, '" "', epiRetinoDICOMfolder,'"']);
-                %at the moment, it uses the %p to rename the output files
-                %so that we have the gems, epi, mprage names in the files.
-                %However, if one uses different names in the dicom
-                %sequences, all names will be incorrect for the next steps
+                %at the moment, it uses the %p to rename the output files so that we have the gems, epi, mprage names in the files.
+                %However, if one uses different names in the dicom sequences, all names will be incorrect for the next steps
                 check_files(epiRetinoNiftiFolder,'*epi*.nii.gz', nbOfDetectedEpi, 1, verbose);
                 check_files(epiRetinoNiftiFolder,'*gems*.nii.gz', nbOfDetectedGems, 1, verbose);
                 dispi(' --------------------------  End of retino epi nitfi conversion  ----------------------------------------', verbose)
-                dispi(' --------------------------  Fixing nifti headers and removing dummy pRF frames  ----------------------------------------', verbose)
+                dispi(' --------------------------  Fixing nifti headers (epi/gems) and removing dummy pRF frames  ----------------------------------------', verbose)
                 niftiFixHeader3(epiRetinoNiftiFolder)
                 expectedFiles= nbOfDetectedEpi+nbOfDetectedGems;
                 check_files(epiRetinoNiftiFolder,'*.nii.gz', expectedFiles, 1, verbose);
@@ -258,6 +266,40 @@ try
             %   13. retino epi: mesh visualization of pRF values
             %   14. retino epi: extraction of flat projections
             %   15. exp epi/gems: nifti conversion
+                dispi(' 15. Exp epi/gems: nifti conversion and fix of nifti headers', verbose)
+                %basic checks
+                dispi(' -------  Starting nifti conversion with dcm2niix from ',epiExpDICOMfolder, ' to /n ', epiExpNiftiFolder, verbose)
+                dispi('For each epi and gems, DICOM should be in separate folders inside ',epiExpDICOMfolder, '/n in the subject root folder',verbose)
+                dispi('Each epi folder should contain the word epi in the name and each gems should contain gems.', verbose)
+                check_folder(epiExpDICOMfolder, 0, verbose); %check that DICOM folder exists
+                epiFolders = list_folders(epiExpDICOMfolder, '*epi*', 1); %detects nomber of epi folders
+                nbOfDetectedEpi=numel(epiFolders); %check whether number of EPI matches with what we expect
+                if nbOfDetectedEpi==param.expEpiNb, dispi(nbOfDetectedEpi,'/',param.expEpiNb,' epis correctly detected', verbose); 
+                     else  warni(nbOfDetectedEpi,'/',param.expEpiNb,' epis detected: incorrect number', verbose); end
+                for i=1:nbOfDetectedEpi  %check that we have the correct number of dcm files in each folder
+                     check_files(epiFolders{i},'*.dcm', param.expEpiTRNb, 0, verbose); %looking for the expected nb of dcm files
+                end
+                gemsFolders = list_folders(epiExpDICOMfolder, '*gems*', 1); %detects nomber of gems folders
+                nbOfDetectedGems=numel(gemsFolders); %checks that it matches what we expect
+                if nbOfDetectedGems==param.expGemsNb, dispi(nbOfDetectedGems,'/',param.expGemsNb,' gems correctly detected', verbose); 
+                     else  warni(nbOfDetectedGems,'/',param.expGemsNb,' gems detected: incorrect number', verbose); end
+                for i=1:nbOfDetectedGems  %check that we have the correct number of dcm files in gem folder
+                     check_files(gemsFolders{i},'*.dcm', param.retinoGemsSliceNb, 0, verbose); %looking for the expected nb of dcm files
+                end
+                remove_previous(epiExpNiftiFolder, verbose); %remove older runs of that code
+                check_folder(epiExpNiftiFolder,0, verbose); %check we have an output nifit folder or creates it
+                success = system(['dcm2niix -z y -s n -t y -x n -v n -f "%p%s" -o "', epiExpNiftiFolder, '" "', epiExpDICOMfolder,'"']);
+                %at the moment, it uses the %p to rename the output files so that we have the gems, epi, mprage names in the files.
+                %However, if one uses different names in the dicom sequences, all names will be incorrect for the next steps
+                check_files(epiExpNiftiFolder,'*epi*.nii.gz', nbOfDetectedEpi, 1, verbose);
+                check_files(epiExpNiftiFolder,'*gems*.nii.gz', nbOfDetectedGems, 1, verbose);
+                dispi(' --------------------------  End of exp epi nitfi conversion  ----------------------------------------', verbose)
+                dispi(' --------------------------  Fixing nifti headers for exp epi/gems----------------------------------------', verbose)
+                niftiFixHeader3(epiExpNiftiFolder)
+                expectedFiles= nbOfDetectedEpi+nbOfDetectedGems;
+                check_files(epiExpNiftiFolder,'*.nii.gz', expectedFiles, 1, verbose);
+                dispi(' --------------------------  End of nifti headers for exp epi/gems ----------------------------------------', verbose)
+        
             %   16. exp epi/gems: motion correction and MC parameter check
             %   17. exp epi: artefact removal
             %   18. exp epi/gems: fix nifti headers
