@@ -69,54 +69,53 @@ err = varargin(strncmpi(varargin,'error',5));
 if isempty(err), err = 'errorOFF'; else err = err{1}; end;
 varargin(strcmp(varargin,err)) = [];
 
-% switch number of inputs
-if numel(varargin) == 1, % directory
-    tf = isdir(varargin{1}); 
-    n = double(tf);
-    result = sprintf('%s\nfound: %d',varargin{1},n);
-    
-elseif numel(varargin) <= 3, % files/number comparison
-    % if isdir, set varargin{2} with *
-    if isdir(fullfile(varargin{1:2})),
-        varargin{2} = [varargin{2} '*'];
+% for each varargin, switch type
+for i = 1:numel(varargin),
+    % if numeric, set to ck
+    if isnumeric(varargin{i}),
+        ck = varargin{i};
+    % if isdir, set to fld
+    elseif isdir(varargin{i}), 
+        fld = varargin{i};
+    else % otherwise set to expr
+        expr = varargin{i};
     end
-    
-    % dir for expression
-    d = dir(fullfile(varargin{1:2}));
-    n = sum(~[d.isdir]); % remove dirs
-    
-    % if 2 args, compare with 0
-    if numel(varargin) == 2,
-        tf = n > 0;
-        result = sprintf('%s\nfiles found: %d',fullfile(varargin{1:2}),n);
-    else % 3 args, compare with varargin{3}
-        tf = n == varargin{3};
-        result = sprintf('%s\nfiles found: %d, expected: %d',fullfile(varargin{1:2}),n,varargin{3});
-    end
-    
-else % unknown inputs
-    warning_error('Unknown inputs',verbose,err);
-    return;
 end
 
-% display warning/error if false
+% init unset vars
+if ~exist('fld','var'), fld = ''; end;
+if ~exist('expr','var'), expr = ''; end;
+if ~exist('ck','var'), ck = ''; end;
+
+% get number of files
+n = numel(dir(fullfile(fld,expr)));
+
+% if checking number
+if ~isempty(ck),
+    tf = n == ck;
+else % check for > 0
+    tf = n > 0;
+end
+
+% set result
+result = sprintf('%s\nfiles found: %d, expected: %d',fullfile(fld,expr),n,ck);
+
+% if false, warn/error
 if ~tf,
-    % warning/error
-    warning_error(result,verbose,err);
-    
-    % if directory, mkdir
-    if numel(varargin) == 1,
-        [success,msg] = mkdir(varargin{1});
+    % display warning/error
+    warning_error(result, verbose, err);
+    % if directory does not exist, mkdir 
+    if ~isempty(fld) && isempty(expr),
+        [success,msg] = mkdir(fld);
         if success, % created directory
             n = 1; % set n to 1 now
-            dispi(varargin{1},' created',verbose);
+            dispi(fld,' created',verbose);
         else % failed
-            warning_error(varargin{1},' not created: ',msg,verbose,err);
+            warning_error(fld,' not created: ', msg, verbose, err);
         end
     end
-    
-else % display true
-    dispi(result,verbose);
+else % display result
+    dispi(result, verbose);
 end
 return;
     
