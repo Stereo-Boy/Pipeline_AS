@@ -1,4 +1,4 @@
-function xform = alignment(sessionDir, vol, ref, ipath, steps)
+function xform = alignment(sessionDir, vol, ref, ipath, steps, verbose)
 % xform = alignment(sessionDir, vol, ref, ipath, steps)
 %
 % Automated alignment:
@@ -31,6 +31,7 @@ if ~exist('ref','var')||isempty(ref),
     ref = fullfile(p,f);
 end;
 if ~exist('steps','var')||isempty(steps), steps = 1:4; end;
+if ~exist('verbose','var')||isempty(verbose), verbose = 'verboseON'; end;
 if ~any(steps==2),
   ipath = [];
 elseif any(steps==2) && (~exist('ipath','var')||isempty(ipath)),
@@ -166,4 +167,5 @@ if exist(fullfile(pwd,'mrSESSION.mat'), 'file'),
 load(fullfile(pwd, 'mrSESSION.mat'), 'mrSESSION');
 mrSESSION.alignment = xform;
 save(fullfile(pwd, 'mrSESSION.mat'), 'mrSESSION', '-append');
+dispi('The found xform was saved as the current mrSESSION alignment', verbose)
 end;
