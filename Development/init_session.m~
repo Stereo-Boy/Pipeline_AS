@@ -46,6 +46,8 @@ if isempty(varargin),
         fullfile(nifti_dir,'*mprage*.nii.gz'),mr_dir};
 end
 
+
+
 % get params from mrInit_parmas, if exists
 if exist(fullfile(mr_dir,'mrInit_params.mat'),'file'),
     load(fullfile(mr_dir,'mrInit_params.mat'));
@@ -67,7 +69,7 @@ for x = 1:2:numel(varargin),
             params.(varargin{x}) = fullfile(nifti_dir,{d.name}); 
         end;
     else % set directly
-        params.(varargin{x}) = varargin{x+1};
+        params.(varargin{x}) = varargin{x+1}};
     end
 end
 

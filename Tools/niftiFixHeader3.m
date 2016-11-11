@@ -46,7 +46,7 @@ if numel(niiFileList)>0
     for j=1:numel(niiFileList)
         ni = readFileNifti(niiFileList{j});
        % if ismember(ni.descrip,{'GEMS_stam','epi_stam'})
-       if numel(ni.fname)>3 && strcmpi(ni.fname(1:3),'epi') || strcmpi(ni.fname(1:4),'gems')
+       if numel(ni.fname)>3 && strcmpi(ni.fname(1:2),'ep') || strcmpi(ni.fname(1:4),'gems')
             ni.qform = 1; %we used method 3, which is why we assign both qform and sform to 1
             ni.sform = 1; %you could decide differently
             %However, if method 2 was used on your nifti conversion, you will get
