@@ -26,14 +26,15 @@ if exist(freeSurferSubjectFolder,'dir')==7
         cd(freeSurferSubjectFolder)
         status = rmdir(freeSurferSubjectFolder,'s');
         if status==1; dispi('Done', verbose); else warni('It did not happen but lets try to see whether it works anyway', verbose); end
-        cd(mprageNiftiFixedFolder)
 end
-
+cd(mprageNiftiFixedFolder)
  %this will be double-checked on the next step by looking for the existance of the ribbon.mgz file
     dispi('Starting white matter segmentation.  May take 8-24 hours to complete...', verbose);
     dispi('------------------------------------------------------------------------- ', verbose);
     mprageFile=dir('*mprage*.nii.gz'); %should be only 1 mprage nifti folder here
-    success = system(['recon-all -i ' mprageFile ' -subjid ' subjectID ' -all']);
+    dispi('Starting recon-all code on file :', mprageFile.name, verbose)
+    dispi('recon-all -i ', mprageFile.name, ' -subjid ', subjectID, ' -all', verbose)
+    success = system(['recon-all -i ', mprageFile.name, ' -subjid ', subjectID, ' -all']);
     
     if success~=0
         error('Error in white matter segmentation... See other messages in command window for details.');
@@ -62,7 +63,7 @@ else
     disp(' ');
 end
 
-% SETTING UP FILES FOR ITKGRAY OR MRGRAY (User input choice)
+% SETTING UP FILES FOR ITKGRAY 
 if ~(exist([subjectID '_nu_RAS_NoRS.nii.gz'],'file')==2) %absence of this file indicates that mgz2nii step has been run
     error([subjectID '_nu_RAS_NoRS.nii.gz not found: Conversion to nifti for this subject does not exist.']);
 end
@@ -109,14 +110,14 @@ dispi('Starting fs_ribbon2itk to convert nifti file to itkGray class file', verb
    %     success = copyfile([getenv('SUBJECTS_DIR') '/' subjectID '/mri/' subjectID '_T1_RAS_NoRS.nii.gz'],destinationFolder);
    % if success; disp(' Done'); else error('Error while copying _T1_RAS_NoRS file'); end
     
-    disp('Copying t1_class.nii.gz file... Done');
+    disp('Copying t1_class.nii.gz file...');
         success = copyfile([getenv('SUBJECTS_DIR') '/' subjectID '/mri/t1_class.nii.gz'],destinationFolder);
     if success; disp(' Done');else error('Error while copying t1_class.nii.gz file'); end
     disp('  ');
     
     %check that itkGray files were actually put in the correct place
     cd(destinationFolder);
-    if exist('t1_class.nii.gz','file')==2 && exist([subjectID '_nu_RAS_NoRS.nii.gz'],'file')==2 && exist([subjectID '_ribbon_RAS_NoRS.nii.gz'],'file')==2
+    if exist('t1_class.nii.gz','file')==2 && exist([subjectID '_nu_RAS_NoRS.nii.gz'],'file')==2
         disp('Necessary files for itkGray successfully copied!');
         disp(['Process complete for ' subjectID '!!']);
     else
@@ -124,9 +125,9 @@ dispi('Starting fs_ribbon2itk to convert nifti file to itkGray class file', verb
     end
 
 disp(' ---------------------------------------------------------------------------------------------')
-disp('--------     nifti header fix  --------------------------')
-    disp('Fixing...')
-    niftiFixHeader3(destinationFolder);
+% disp('--------     nifti header fix  --------------------------')
+%     disp('Fixing...')
+%     niftiFixHeader3(destinationFolder);
 
 disp(' ------------------ AUTO SEGMENTATION FINISHED ------------------------------------------------------------ ');
 
