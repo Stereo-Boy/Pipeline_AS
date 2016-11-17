@@ -193,15 +193,14 @@ try
                  
            case {2}        %  2. mprage: segmentation using FSL
                 %basic checks
-                 dispi(' -------  ',step, '. Starting FSL segmentation from ',mprageNiftiFixedFolder, ' to \n', mprageSegmentedFolder, verbose)
+                 dispi(' -------  ',step, '. Starting FSL segmentation from ',mprageNiftiFolder, ' to \n', mprageSegmentedFolder, verbose)
                  dispi('Check that source folders exist for that step', verbose)
-                 check_folder(mprageNiftiFixedFolder, 1, verbose);
-                 check_files(mprageNiftiFixedFolder,'*mprage*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
-                 check_files(mprageNiftiFixedFolder,'epiHeaders_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called epiHeaders_FIXED
+                 check_folder(mprageNiftiFolder, 1, verbose);
+                 check_files(mprageNiftiFolder,'*mprage*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
                  remove_previous(mprageSegmentedFolder, verbose);
                  disp('Check that potential folder was correctly removed and creates a new one (will issue a benine warning)')
                  check_folder(mprageSegmentedFolder, 0, verbose);
-                 segmentation(subjID, mprageNiftiFixedFolder,mprageSegmentedFolder, verbose)
+                 segmentation(subjID, mprageNiftiFolder,mprageSegmentedFolder, verbose)
                  
            case {3}    %   3. mprage: correction of gray mesh irregularities
                 dispi(' -------  ',step, '. mprage: correction of gray mesh irregularities not implemented yet', verbose)
@@ -218,6 +217,7 @@ try
                  copy_files(mprageSegmentedFolder, '*nu_RAS_NoRS*.nii.gz', mprageNiftiFixedFolder, verbose) %copy all nifti mprage files
                  check_files(mprageNiftiFixedFolder,'*nu_RAS_NoRS*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
                  niftiFixHeader3(mprageNiftiFixedFolder)
+                 check_files(mprageNiftiFixedFolder,'epiHeaders_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called epiHeaders_FIXED
                  dispi(' --------------------------  End of nitfi repair for mprage  ----------------------------------------', verbose)
                 
             case {5}     %   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames
@@ -280,14 +280,23 @@ try
                  
           case {7}   %   7. retino epi: MC parameter check and artefact removal
                 dispi(' -------  ',step, '. retino epi: MC parameter check and artefact removal', verbose)
-                dispi(' Motion corrected files should be nifti-header fixed in folder :', retinoMCfolder)
+                
+                %bad_trs = motion_parameters(retinoMCfolder);
+                %dispi('Suspicious TR detected \n    EPI   TR', verbose)
+                %disp(bad_trs)
+                
+                dispi(' Nifti should be in folder :', retinoNiftiFolder)
                 dispi('Check that source folders exist for that step', verbose)
-                check_folder(retinoMCfolder, 1, verbose);
-                bad_trs = motion_parameters(retinoMCfolder);
-                dispi('Suspicious TR detected \n    EPI   TR')
+                check_folder(retinoNiftiFolder, 1, verbose);
+                dispi('Removing potential previous files for motion parameters')
+                listConfounds=list_files(retinoNiftiFolder, '*confound*', 1);
+                if numel(listConfounds)>0; dispi('Found ', numel(listConfounds),' confound files that are deleted now', verbose); delete(listConfounds{:}); end
+                dispi('Using motion_outliers code from FSL for detecting artefacts', verbose)
+                bad_trs=motion_outliers(retinoNiftiFolder, '-p', 'motion_params.png', '--dvars');
+                dispi('Suspicious TR detected are:', verbose)
                 disp(bad_trs)
+                
                 dispi(' --------------------------  retino epi: end of motion param checks  ----------------------------------------', verbose)
-                %  motion_outliers(retinoNiftiFolder)
                 
           case {8} %8. retino epi/gems: nifti header repair
                 dispi(' ------- --- ',step, '. retino epi/gems: nifti header repair --------------------', verbose)
@@ -307,6 +316,9 @@ try
                 dispi('Check that source folders exist for that step', verbose)
                 check_folder(retinoNiftiFixedFolder, 1, verbose);
                 check_folder(mprageNiftiFixedFolder, 1, verbose);
+                dispi('Check that headers are corrected')
+                check_files(mprageNiftiFixedFolder,'epiHeaders_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called epiHeaders_FIXED
+                check_files(retinoNiftiFixedFolder,'epiHeaders_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called epiHeaders_FIXED
                 remove_previous(retinoMrSessionFolder, verbose);
                 dispi('Check that potential folder was correctly removed and creates a new one (will issue a benine warning)', verbose)
                 check_folder(retinoMrSessionFolder, 0, verbose);

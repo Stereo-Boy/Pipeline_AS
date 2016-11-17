@@ -72,6 +72,7 @@ end;
 
 %% 2. spm_coreg (coarse alignment; taken from rxFineMutualInf)
 if any(steps==2),
+    dispi('Step 2', verbose)
 % get ref and vol data as uint8
 VG.uint8 = uint8(ref_data);
 VF.uint8 = uint8(vol_data);
@@ -112,6 +113,9 @@ end;
 
 %% 3. Mutual Information (fine alignment; taken from rxFineMutualInf)
 if any(steps==3),
+    dispi('Step 3', verbose)
+    % set sep to [4,2]
+    flags.sep = [4,2];
     % set tolerances for rotations and translations
     flags.tol = [0.005 0.005 0.005 0.001 0.001 0.001];
     % set params in flags to account for coarse alignment
@@ -125,6 +129,7 @@ end;
 
 %% 4. Nestares (further fine alignment; taken from rxFineNestares)
 if any(steps==4),
+    dispi('Step 4', verbose)
 % switch rows and columns because mrvista is terrible
 % flip to (x,y,z) instead of (y,x,z):
 xform(:,[1 2]) = xform(:,[2 1]);
@@ -162,6 +167,7 @@ xform(:,[1 2]) = xform(:,[2 1]);
 xform([1 2],:) = xform([2 1],:);
 end;
 
+    dispi('Saving...', verbose)
 % save to mrSESSION.mat
 if exist(fullfile(pwd,'mrSESSION.mat'), 'file'),
 load(fullfile(pwd, 'mrSESSION.mat'), 'mrSESSION');
