@@ -42,9 +42,22 @@ if isempty(varargin),
     % set defaults
     varargin = cell(1,8);
     varargin(1,1:2:end) = {'inplane','functionals','vAnatomy','sessionDir'};
-    varargin(1,2:2:end) = {fullfile(nifti_dir,'*gems*.nii.gz'),'epi*.nii*',...
-        fullfile(nifti_dir,'*mprage*.nii.gz'),mr_dir};
+    varargin(1,2:2:end) = {fullfile(nifti_dir,'*gems*.nii.gz'),...
+        fullfile(nifti_dir,'epi*.nii*'),fullfile(nifti_dir,'*mprage*.nii.gz'),...
+        mr_dir};
 end
+% get verbose
+if any(strncmp(varargin,'verbose',7)),
+    verbose = varargin{strncmp(varargin,'verbose',7)};
+    varargin(strcmp(varargin,verbose)) = [];
+else % default on
+    verbose = 'verboseON';
+end
+
+% display inputs
+dispi(mfilename,'\nmr_dir: ',mr_dir,'\nnifti_dir: ',nifti_dir,...
+    '\nparams:\n',varargin(1:2:end)','\nvalues:\n',varargin(2:2:end)','\n',...
+    verbose);
 
 % get params from mrInit_parmas, if exists
 if exist(fullfile(mr_dir,'mrInit_params.mat'),'file'),
@@ -64,19 +77,21 @@ for x = 1:2:numel(varargin),
         % get files using dir
         clear d; d = dir(fullfile(tmp_dir,varargin{x+1}));
         if ~isempty(d), 
-            params.(varargin{x}) = fullfile(nifti_dir,{d.name}); 
+            params.(varargin{x}) = fullfile(tmp_dir,{d.name}); 
         end;
     else % set directly
         params.(varargin{x}) = varargin{x+1};
     end
 end
 
-disp(params)
+% display params
+dispi(params, verbose);
+
 % initialize the session
-    initialDir=pwd;
-    cd(mr_dir)
-    mrInit(params);
-    cd(initialDir)
+initialDir=pwd;
+cd(mr_dir);
+mrInit(params);
+cd(initialDir);
 return;
 
 
