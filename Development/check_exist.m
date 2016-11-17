@@ -74,8 +74,8 @@ for i = 1:numel(varargin),
     % if numeric, set to ck
     if isnumeric(varargin{i}),
         ck = varargin{i};
-    % if isdir, set to fld
-    elseif isdir(varargin{i}), 
+    % fld doesnt exist, set to fld
+    elseif ~exist('fld','var'), 
         fld = varargin{i};
     else % otherwise set to expr
         expr = varargin{i};
@@ -94,9 +94,12 @@ d = dir(fullfile(fld,expr));
 if ~isempty(fld) && ~isempty(expr),
     d = d(~[d.isdir]);
     ftype = 'files';
-else % get only folders
+elseif any(strfind(fld,'*')) % get n of folders
     d = d([d.isdir]);
     ftype = 'folders';
+else % check isdir(fld)
+    d = ones(isdir(fld));
+    ftype = 'folder';
 end
 
 % get number of files/folders
@@ -117,7 +120,7 @@ if ~tf,
     % display warning/error
     warning_error(result, verbose, err);
     % if directory does not exist, mkdir 
-    if ~isempty(fld) && isempty(expr),
+    if ~isempty(fld) && isempty(expr) && isempty(ck),
         [success,msg] = mkdir(fld);
         if success, % created directory
             n = 1; % set n to 1 now
