@@ -1,7 +1,7 @@
-function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose)
+function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, param, verbose)
 % ------------------------------------------------------------------------
 % Automated fMRI analysis pipeline for mrVista analysis
-% pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose)
+% pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, param, verbose)
 %
 % stepList2run is a list of numbers corresponding to the possible steps to
 % run. If stepList2run is not defined, it shows this help.
@@ -9,7 +9,7 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose)
 % Steps available to run:
 %   0. All of the below steps
 %   1. mprage: nifti conversion
-%   2. mprage: segmentation using FSL
+%   2. mprage: segmentation using freesurfer
 %   3. mprage: correction of gray mesh irregularities
 %   4. mprage: nifti header repair
 %   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames
@@ -39,6 +39,7 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose)
 % - subjID: subject id (string, if not provided will take the name of the subject folder)
 % - notes_dir: [optional] directory path to save command output (string),
 %   default is subj_ID_date_pipeline
+% - param:
 % - verbose: if verbose = verboseOFF, none of the disp function will give an
 %   ouput (default is verboseON)
 % ------------------------------------------------------------------------
@@ -68,15 +69,14 @@ try
         subj_dir = uigetdir(pwd, 'Choose folder for analysis:'); 
     end;
     
-    cd(check_folder(subj_dir, 1, verbose));
-    
     %check for subjID
     if ~exist('subjID','var'), [~, subjID] = fileparts(subj_dir); end;
     
     %check for notes_dir
     if exist('notes_dir','var') 
         % creates notes_dir if necessary and start diary
-        record_notes(check_folder(notes_dir,0, verbose),'pipeline_JAS')
+        check_exist(notes_dir,verbose);
+        record_notes(notes_dir,'pipeline_JAS')
     end
 
     dispi(dateTime, verbose)
@@ -84,13 +84,13 @@ try
     dispi('Subject ID is: ', subjID, verbose)
     
     %load subject parameters
-    cd(subj_dir)
-    success = check_files(subj_dir, 'expectedParametersForPipeline.m', 1, 0, verbose);
-    if success==0, dispi('The parameter file expectedParametersForPipeline could not \n',...
-            'be found in the subject directory, where it should be. Template file might be used instead: ',parameterFile, verbose); end
-    param=expectedParametersForPipeline(verbose);
-    dispi('Current expected parameters are: ', verbose)
-    disp(param)
+    if ~exist('param','var'),
+        success = check_exist(subj_dir, 'expectedParametersForPipeline.m', 1, verbose);
+        if success==0, dispi('The parameter file expectedParametersForPipeline could not \n',...
+                'be found in the subject directory, where it should be. Template file might be used instead: ',parameterFile, verbose); end
+        param=expectedParametersForPipeline(verbose);
+    end
+    dispi('Current expected parameters are:\n', param, verbose);
     
     % MENU
     if exist('stepList2run', 'var')==0
@@ -111,7 +111,7 @@ try
         mprageDICOMfolder = fullfile(subj_dir,'01a_mprage_DICOM');
         mprageNiftiFolder = fullfile(subj_dir,'02_mprage_nifti');
         mprageSegmentedFolder = fullfile(subj_dir,'03_mprage_segmented');
-        mprageNiftiFixedFolder = fullfile(subj_dir,'04_mprage_nifti_fixed');
+%         mprageNiftiFixedFolder = fullfile(subj_dir,'04_mprage_nifti_fixed');
 
         retinoDICOMfolder = fullfile(subj_dir,'01b_epi_retino_DICOM');
         retinoNiftiFolder = fullfile(subj_dir,'03_retino_nifti');
@@ -170,76 +170,61 @@ try
     dispi('Start to run pipeline steps', verbose)
     for step=stepList2run
         switch step
-            case {1}            %   1. mprage: nifti conversion
+            case {1} %   1. mprage: nifti conversion
                 %basic checks
                 dispi(' -------  ',step, '. Starting nifti conversion with dcm2niix from ',mprageDICOMfolder, ' to \n', mprageNiftiFolder, verbose)
                 dispi('DICOM mprage files (and only them) should be in a folder called ',mprageDICOMfolder, ' in the subject root folder',verbose)
                 dispi('Check that source folders exist for that step', verbose)
-                check_folder(mprageDICOMfolder, 1, verbose); %check that DICOM folder exists
-                check_files(mprageDICOMfolder,'*.dcm', param.mprageSliceNb, 1, verbose); %looking for the expected nb of dcm files
+                check_exist(mprageDICOMfolder, 'errorON', verbose);
+                check_exist(mprageDICOMfolder, '*.dcm', param.mprageSliceNb, 'errorON', verbose);
                 remove_previous(mprageNiftiFolder, verbose);
-                disp('Check folder was correctly removed and creates a new one (will issue a benine warning)')
-                check_folder(mprageNiftiFolder,0, verbose);
-                success = system(['dcm2niix -z y -s n -t y -x n -v n -f "mprage" -o "', mprageNiftiFolder, '" "', mprageDICOMfolder,'"']);
-                check_files(mprageNiftiFolder,'*.nii.gz', 1, 1, verbose);
-                dispi(' --------------------------  End of mprage nitfi conversion  ----------------------------------------', verbose)
-                            % -z y : gzip the files
-                            % -s n : convert all images in folder
-                            % -t y : save a text note file
-                            % -x n : do not crop
-                            % -v n : no verbose
-                            % -o : output directory
-                            % end term: input directory  
+                check_exist(mprageNiftiFolder, verbose);
+                loop_system('dcm2niix', '-z y', '-f mprage', '-o', ['"' mprageNiftiFolder '"'], ['"' mprageDICOMfolder '"']);
+                check_exist(mprageNiftiFolder, '*.nii.gz', 1, 'errorON', verbose);
+                dispi(' --------------------------  End of mprage nitfi conversion  ----------------------------------------', verbose);
                  
-           case {2}        %  2. mprage: segmentation using FSL
-                %basic checks
-                 dispi(' -------  ',step, '. Starting FSL segmentation from ',mprageNiftiFixedFolder, ' to \n', mprageSegmentedFolder, verbose)
-                 dispi('Check that source folders exist for that step', verbose)
-                 check_folder(mprageNiftiFixedFolder, 1, verbose);
-                 check_files(mprageNiftiFixedFolder,'*mprage*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
-                 check_files(mprageNiftiFixedFolder,'epiHeaders_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called epiHeaders_FIXED
+           case {2} %  2. mprage: segmentation using freesurfer
+                 %basic checks
+                 dispi(' -------  ',step, '. Starting freesurfer segmentation from ',mprageNiftiFolder, ' to \n', mprageSegmentedFolder, verbose);
+                 dispi('Check that source folders exist for that step', verbose);
+                 check_exist(mprageNiftiFolder, 'errorON', verbose);
+                 check_exist(mprageNiftiFolder, '*mprage*.nii.gz', 1, 'errorON', verbose);
                  remove_previous(mprageSegmentedFolder, verbose);
-                 disp('Check that potential folder was correctly removed and creates a new one (will issue a benine warning)')
-                 check_folder(mprageSegmentedFolder, 0, verbose);
-                 segmentation(subjID, mprageNiftiFixedFolder,mprageSegmentedFolder, verbose)
+                 check_exist(mprageSegmentedFolder, verbose);
+                 segmentation(subjID, mprageNiftiFolder, mprageSegmentedFolder, verbose);
                  
-           case {3}    %   3. mprage: correction of gray mesh irregularities
-                dispi(' -------  ',step, '. mprage: correction of gray mesh irregularities not implemented yet', verbose)
+           case {3} %   3. mprage: correction of gray mesh irregularities
+                dispi(' -------  ',step, '. mprage: correction of gray mesh irregularities not implemented yet', verbose);
                 
-           case {4}        %   4. mprage: fix nifti header
+           case {4} %   4. mprage: fix nifti header
                  %basic checks
                  dispi(' -------  ',step, '. Starting repair of nifti headers from ',mprageSegmentedFolder, ' to \n', mprageNiftiFixedFolder, verbose)
-                 dispi('Check that source folders exist for that step', verbose)
-                 check_folder(mprageSegmentedFolder, 1, verbose);
-                 check_files(mprageSegmentedFolder,'*nu_RAS_NoRS*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
+                 dispi('Check that source folders exist for that step', verbose);
+                 check_exist(mprageSegmentedFolder, 'errorON', verbose);
+                 check_exist(mprageSegmentedFolder, '*nu_RAS_NoRS*.nii.gz', 1, 'errorON', verbose);
                  remove_previous(mprageNiftiFixedFolder, verbose);
-                 disp('Check that potential folder was correctly removed and creates a new one (will issue a benine warning)')
-                 check_folder(mprageNiftiFixedFolder,0, verbose);
-                 copy_files(mprageSegmentedFolder, '*nu_RAS_NoRS*.nii.gz', mprageNiftiFixedFolder, verbose) %copy all nifti mprage files
-                 check_files(mprageNiftiFixedFolder,'*nu_RAS_NoRS*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
-                 niftiFixHeader3(mprageNiftiFixedFolder)
+                 check_exist(mprageNiftiFixedFolder, verbose);
+                 copy_files(mprageSegmentedFolder, '*nu_RAS_NoRS*.nii.gz', mprageNiftiFixedFolder, verbose); %copy all nifti mprage files
+                 check_exist(mprageNiftiFixedFolder, '*nu_RAS_NoRS*.nii.gz', 1, 'errorON', verbose); %looking for 1 mprage nifti file
+                 hdr_vals = {'qform_code',1,'sform_code',1,'freq_dim',1,'phase_dim',2,'slice_dim',3,...
+                     'slice_end',param.mprageSliceNb-1,'slice_duration',0};
+                 fixHeader(mprageNiftiFixedFolder, '*nu_RAS_NoRS*.nii.gz', hdr_vals{:}, verbose);
                  dispi(' --------------------------  End of nitfi repair for mprage  ----------------------------------------', verbose)
                 
-            case {5}     %   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames
-                dispi(' -------  ',step, '. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames', verbose)
+            case {5} %   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames
                 %basic checks
+                dispi(' -------  ',step, '. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames', verbose)
                 dispi(' -------  Starting nifti conversion with dcm2niix from ',retinoDICOMfolder, ' to \n ', retinoNiftiFolder, verbose)
                 dispi('For each epi and gems, DICOM should be in separate folders inside ',retinoDICOMfolder, '\n in the subject root folder',verbose)
                 dispi('Each epi folder should contain the word epi in the name and each gems should contain gems.', verbose)
                 dispi('Check that source folders exist for that step', verbose)
-                check_folder(retinoDICOMfolder, 1, verbose); %check that DICOM folder exists
-                epiFolders = list_folders(retinoDICOMfolder, '*epi*', 1); %detects nomber of epi folders
-                nbOfDetectedEpi=numel(epiFolders); %check whether number of EPI matches with what we expect
-                if nbOfDetectedEpi==param.retinoEpiNb, dispi(nbOfDetectedEpi,'/',param.retinoEpiNb,' epis correctly detected', verbose); 
-                     else  warni(nbOfDetectedEpi,'/',param.retinoEpiNb,' epis detected: incorrect number', verbose); end
-                for i=1:nbOfDetectedEpi  %check that we have the correct number of dcm files in each folder
-                     check_files(epiFolders{i},'*.dcm', param.retinoEpiTRNb, 0, verbose); %looking for the expected nb of dcm files
+                check_exist(retinoDICOMfolder, 'errorON', verbose); %check that DICOM folder exists
+                check_exist(fullfile(retinoDICOMfolder, '*epi*'), verbose);
+                for i=1:n_Epi  %check that we have the correct number of dcm files in each folder
+                     check_exist(epiFolders{i},'*.dcm', param.retinoEpiTRNb, verbose);
                 end
-                gemsFolders = list_folders(retinoDICOMfolder, '*gems*', 1); %detects nomber of gems folders
-                nbOfDetectedGems=numel(gemsFolders); %checks that it matches what we expect
-                if nbOfDetectedGems==param.retinoGemsNb, dispi(nbOfDetectedGems,'/',param.retinoGemsNb,' gems correctly detected', verbose); 
-                     else  warni(nbOfDetectedGems,'/',param.retinoGemsNb,' gems detected: incorrect number', verbose); end
-                for i=1:nbOfDetectedGems  %check that we have the correct number of dcm files in gem folder
+                check_exist(fullfile(retinoDICOMfolder, '*gems*'), 1, verbose);
+                for i=1:n_Gems  %check that we have the correct number of dcm files in gem folder
                      check_files(gemsFolders{i},'*.dcm', param.retinoGemsSliceNb, 0, verbose); %looking for the expected nb of dcm files
                 end
                 remove_previous(retinoNiftiFolder, verbose); %remove older runs of that code
@@ -249,8 +234,8 @@ try
                 %at the moment, it uses the %p to rename the output files so that we have the gems, epi, mprage names in the files.
                 %However, if one uses different names in the dicom  sequences, all names will be incorrect for the next steps (we already have trouble
                 % with some called ep2d instead of epi)
-                check_files(retinoNiftiFolder,'*epi*.nii.gz', nbOfDetectedEpi, 1, verbose);
-                check_files(retinoNiftiFolder,'*gems*.nii.gz', nbOfDetectedGems, 1, verbose);
+                check_files(retinoNiftiFolder,'*epi*.nii.gz', n_Epi, 1, verbose);
+                check_files(retinoNiftiFolder,'*gems*.nii.gz', n_Gems, 1, verbose);
                 dispi(' --------------------------  End of retino epi nitfi conversion  ----------------------------------------', verbose)
                 dispi(' --------------------------  Removing dummy pRF frames  ----------------------------------------', verbose)
                 listConvertedEPI=list_files(retinoNiftiFolder, '*epi*.nii.gz', 1);
@@ -343,17 +328,17 @@ try
                 dispi('Check that source folders exist for that step', verbose)
                 check_folder(expDICOMfolder, 1, verbose); %check that DICOM folder exists
                 epiFolders = list_folders(expDICOMfolder, '*epi*', 1); %detects nomber of epi folders
-                nbOfDetectedEpi=numel(epiFolders); %check whether number of EPI matches with what we expect
-                if nbOfDetectedEpi==param.expEpiNb, dispi(nbOfDetectedEpi,'/',param.expEpiNb,' epis correctly detected', verbose); 
-                     else  warni(nbOfDetectedEpi,'/',param.expEpiNb,' epis detected: incorrect number', verbose); end
-                for i=1:nbOfDetectedEpi  %check that we have the correct number of dcm files in each folder
+                n_Epi=numel(epiFolders); %check whether number of EPI matches with what we expect
+                if n_Epi==param.expEpiNb, dispi(n_Epi,'/',param.expEpiNb,' epis correctly detected', verbose); 
+                     else  warni(n_Epi,'/',param.expEpiNb,' epis detected: incorrect number', verbose); end
+                for i=1:n_Epi  %check that we have the correct number of dcm files in each folder
                      check_files(epiFolders{i},'*.dcm', param.expEpiTRNb, 0, verbose); %looking for the expected nb of dcm files
                 end
                 gemsFolders = list_folders(expDICOMfolder, '*gems*', 1); %detects nomber of gems folders
-                nbOfDetectedGems=numel(gemsFolders); %checks that it matches what we expect
-                if nbOfDetectedGems==param.expGemsNb, dispi(nbOfDetectedGems,'/',param.expGemsNb,' gems correctly detected', verbose); 
-                     else  warni(nbOfDetectedGems,'/',param.expGemsNb,' gems detected: incorrect number', verbose); end
-                for i=1:nbOfDetectedGems  %check that we have the correct number of dcm files in gem folder
+                n_Gems=numel(gemsFolders); %checks that it matches what we expect
+                if n_Gems==param.expGemsNb, dispi(n_Gems,'/',param.expGemsNb,' gems correctly detected', verbose); 
+                     else  warni(n_Gems,'/',param.expGemsNb,' gems detected: incorrect number', verbose); end
+                for i=1:n_Gems  %check that we have the correct number of dcm files in gem folder
                      check_files(gemsFolders{i},'*.dcm', param.expGemsSliceNb, 0, verbose); %looking for the expected nb of dcm files
                 end
                 remove_previous(expNiftiFolder, verbose); %remove older runs of that code
@@ -362,8 +347,8 @@ try
                 success = system(['dcm2niix -z y -s n -t y -x n -v n -f "%p%s" -o "', expNiftiFolder, '" "', expDICOMfolder,'"']);
                 %at the moment, it uses the %p to rename the output files so that we have the gems, epi, mprage names in the files.
                 %However, if one uses different names in the dicom sequences, all names will be incorrect for the next steps
-                check_files(expNiftiFolder,'*ep*.nii.gz', nbOfDetectedEpi, 1, verbose);
-                check_files(expNiftiFolder,'*gems*.nii.gz', nbOfDetectedGems, 1, verbose);
+                check_files(expNiftiFolder,'*ep*.nii.gz', n_Epi, 1, verbose);
+                check_files(expNiftiFolder,'*gems*.nii.gz', n_Gems, 1, verbose);
                 dispi(' --------------------------  End of exp epi nitfi conversion  ----------------------------------------', verbose)
                 
             
@@ -374,7 +359,7 @@ try
                 dispi('Check that source folders exist for that step', verbose)
                 check_folder(expNiftiFolder, 1, verbose); %check that DICOM folder exists
                 niftiFixHeader3(expNiftiFolder)
-                expectedFiles= nbOfDetectedEpi+nbOfDetectedGems;
+                expectedFiles= n_Epi+n_Gems;
                 check_files(expNiftiFolder,'*.nii.gz', expectedFiles, 1, verbose);
                 dispi(' --------------------------  End of nifti headers for exp epi/gems ----------------------------------------', verbose)
             
@@ -393,7 +378,6 @@ try
     record_notes('off');
 catch err
     try
-        cd(subj_dir)
         record_notes('off');
         rethrow(err);
     catch err2
