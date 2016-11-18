@@ -15,6 +15,14 @@ function [status, result] = loop_system(varargin)
 status = {}; result = {};
 if nargin==0, return; end;
 
+% get verbose
+if any(strncmp(varargin,'verbose',7)),
+    verbose = varargin{strncmp(varargin,'verbose',7)};
+    varargin(strcmp(varargin,verbose)) = []; 
+else % default on
+    verbose = 'verboseON';
+end
+
 % find non-cell varargins
 noncells = ~cellfun('isclass',varargin,'cell'); 
 varargin(noncells) = num2cell(varargin(noncells));
@@ -23,7 +31,7 @@ varargin(noncells) = num2cell(varargin(noncells));
 n = max(cellfun(@(x)numel(x),varargin));
 
 % for each varargin, preprare for system call
-for x = 1:nargin,
+for x = 1:numel(varargin),
     % ensure each varargin is vertically oriented
     if size(varargin{x},2) > 1,
         varargin{x} = varargin{x}'; 
@@ -43,7 +51,11 @@ for x = 1:n,
 end
 
 % system call loop  
-for f = 1:n, [status{f},result{f}] =system(options{f}); end;
+for f = 1:n, 
+    dispi(options{f}, verbose);
+    [status{f},result{f}] = system(options{f}); 
+    dispi(result{f}, verbose);
+end;
 return;
 
 function arg = setup_arg(arg)

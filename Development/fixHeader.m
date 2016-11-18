@@ -1,5 +1,5 @@
 function fixHeader(fix_dir, expr, varargin)
-% fixHeader(fix_dir, expr, 'field', 'value',...['verboseOFF'])
+% fixHeader(fix_dir, expr, 'field', 'value',...,['verboseOFF'])
 % 
 % Inputs:
 % fix_dir: string directory containing nifti files to correct headers
@@ -20,7 +20,6 @@ function fixHeader(fix_dir, expr, varargin)
 % init defaults
 if ~exist('fix_dir','var')||~exist(fix_dir,'dir'), fix_dir = pwd; end;
 if ~exist('expr','var')||isempty(expr), expr = '*.nii*'; end;
-if isempty(varargin), return; end;
 
 % get verbose
 if any(strncmp(varargin,'verbose',7)),
@@ -35,8 +34,12 @@ fields = varargin(1:2:end);
 values = varargin(2:2:end);
 
 % set vars for displaying
-vars = cellfun(@(x,y){{x,': ',y,'\n'}},fields,values);
-vars = cat(2,vars{:});
+if ~isempty(fields) && ~isempty(values),
+    vars = cellfun(@(x,y){{x,': ',y,'\n'}},fields,values);
+    vars = cat(2,vars{:});
+else % set vars to empty
+    vars = {};
+end
 
 % display inputs
 dispi(mfilename,'\nfix_dir: ',fix_dir,'\nexpr: ',expr,'\n',vars{:},verbose);
@@ -56,6 +59,8 @@ for x = 1:numel(files),
     end
     % display file and nifti structure
     dispi('File ',x,': ',files{x},'\n',ni,verbose);
+    % check qto
+    ni = niftiCheckQto(ni);
     % write out nifti
     writeFileNifti(ni);
 end
