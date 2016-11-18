@@ -11,7 +11,8 @@ close all
 %if exist('rmse'); clear rmse; end
 %if exist('corrCoeffValue'); clear corrCoeffValue; end
 
-if exist('mrVistaFolder','var'); warni('You need to provide mrVista root for your session',verbose); mrVistaFolder =pwd; end
+if exist('verbose', 'var')==0; verbose='verboseON'; end
+if exist('mrVistaFolder','var')==0; warni('You need to provide mrVista root for your session',verbose); mrVistaFolder =pwd; end
 dispi('The alignment you want to assess should be saved as the current mr alignment', verbose)
 %input('Press ENTER if OK')
 

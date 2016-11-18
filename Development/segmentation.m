@@ -13,6 +13,7 @@ function segmentation(subjectID, mprageNiftiFixedFolder,mprageSegmentedFolder, v
 % ------------------------------------------------------------------------------------------------------------
 
 %define subject ID
+if exist('verbose', 'var')==0; verbose='verboseON'; end
 if ~exist('subjectID','var'); erri('segmentation: subjectID not defined', verbose), end
 if ~exist('mprageNiftiFixedFolder','var'); mprageNiftiFixedFolder=cd; dispi('segmentation: mprageNiftiFixedFolder not defined. Defaulting to ',mprageNiftiFixedFolder, verbose), end
 if ~exist('mprageSegmentedFolder','var'); erri('segmentation: destination folder is not defined', verbose), end

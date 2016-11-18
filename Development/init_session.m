@@ -62,7 +62,9 @@ dispi(mfilename,'\nmr_dir: ',mr_dir,'\nnifti_dir: ',nifti_dir,...
 % get params from mrInit_parmas, if exists
 if exist(fullfile(mr_dir,'mrInit_params.mat'),'file'),
     load(fullfile(mr_dir,'mrInit_params.mat'));
+    dispi('Loaded default parameters from previous session file', verbose)
 else % set default
+    dispi('Loaded default parameters from mrInitDefaultParams',verbose)
     params = mrInitDefaultParams;
 end
 
@@ -91,6 +93,11 @@ dispi(params, verbose);
 initialDir=pwd;
 cd(mr_dir);
 mrInit(params);
+
+%define and attribute vAnatomy file
+vANATOMYPATH = params.vAnatomy;
+save(fullfile(cd,'mrSESSION.mat'), 'vANATOMYPATH', '-append');
+dispi('vANATOMYPATH defined to ', params.vAnatomy, verbose); %alternative: vANATOMYPATH = setVAnatomyPath; 
 cd(initialDir);
 return;
 

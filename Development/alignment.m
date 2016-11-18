@@ -176,9 +176,11 @@ if any(steps==4),
 end;
 
 % save to mrSESSION.mat
-if exist(fullfile(pwd,'mrSESSION.mat'), 'file'),
-load(fullfile(pwd, 'mrSESSION.mat'), 'mrSESSION');
-mrSESSION.alignment = xform;
-save(fullfile(pwd, 'mrSESSION.mat'), 'mrSESSION', '-append');
-dispi('Xform was saved to ', fullfile(pwd,'mrSESSION.mat'), verbose)
+if exist(fullfile(sessionDir,'mrSESSION.mat'), 'file'),
+    load(fullfile(sessionDir, 'mrSESSION.mat'), 'mrSESSION');
+    mrSESSION.alignment = xform;
+    save(fullfile(sessionDir, 'mrSESSION.mat'), 'mrSESSION', '-append');
+    dispi('Xform was saved to ', fullfile(sessionDir,'mrSESSION.mat'), verbose)
+else
+    warni('Alignment step failed because there is no correct mrSESSION path provided', verbose)
 end;
