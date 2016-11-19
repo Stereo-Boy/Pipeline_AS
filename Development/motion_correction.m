@@ -32,7 +32,7 @@ function motion_correction(mc_dir, expr, type, varargin)
 %
 % Example 4: motion correct all nifti files in pwd using middle TR of
 % middle epi
-% motion_correction(pwd,'*.nii*','reffile','-plots','-reports','-cost mutualinfo','-smooth 16')
+% motion_correction(pwd,'*.nii*','reffile','-plots','-report','-cost mutualinfo','-smooth 16')
 %
 % Created by Justin Theiss 11/2016
 

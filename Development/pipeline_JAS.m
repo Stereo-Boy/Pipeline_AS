@@ -53,7 +53,6 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose)
 
 try
 % ---------- INITIALIZATION --------------------------------------------------------------------------------------------------
-
     if nargin==0
         help(mfilename);
         return;
@@ -84,7 +83,6 @@ try
     dispi('Subject ID is: ', subjID, verbose)
     
     %load subject parameters
-    cd(subj_dir)
     success = check_files(subj_dir, 'expectedParametersForPipeline.m', 1, 0, verbose);
     if success==0, dispi('The parameter file expectedParametersForPipeline could not ',...
             'be found in the subject directory, where it should be. Template file might be used instead: ',parameterFile, verbose); end
@@ -282,17 +280,23 @@ try
                 
                 dispi('We want mcFLIRT to motion correct the epis to the higher resolution GEMS') 
                 dispi('To avoid mcFLIRT resampling the epi to this higher resolution, we will first resample the GEMS with the EPI resolution')
-                %gemsFileRef = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
-                gemsFileRef = '/Users/adrienchopin/Desktop/Big_data_STAM/MV40/pipeline_JAS_1/gems90x90.nii.gz';
+                gemsFile = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
+                epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
+                
+                gemsFileRef=fullfile(retinoMCfolder,'gemsRef.nii.gz');
+                %gemsFileRef=fullfile(subj_dir,'gems90x90.nii.gz');
+                fslresample(gemsFile,gemsFileRef, '-ref', epis{1}, verbose)
                 
 
                 %motion correct the epi to the higher resolution gems (as a ref file)
                 dispi('Motion-correcting all epis to the gems reference file: ', gemsFileRef, verbose);
-                motion_correction(retinoMCfolder, '*epi*.nii.gz', 'reffile', gemsFileRef, 1) 
+                motion_correction(retinoMCfolder, '*epi*.nii.gz', {'reffile', gemsFileRef, 1}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
 
                 dispi('Check that we have all our MC files in MC folder', verbose)
                 check_files(retinoMCfolder,'*_mcf.nii.gz', nbFiles-1, 1, verbose); %should be nb of epi -1 bc we do not correct our gems
                 check_files(retinoMCfolder,'*_mcf.par', nbFiles-1, 1, verbose);
+                dispi('Deleting the downsampled gems reference file', verbose)
+                delete(gemsFileRef)
                dispi(' --------------------------  retino epi/gems: end of motion correction  ----------------------------------------', verbose)
                
           case {7}   %   7. retino epi: MC parameter check and artefact removal
@@ -347,8 +351,10 @@ try
                 copy_files(retinoNiftiFixedFolder, '*epi*mcf*.nii.gz', retinoMrNiftiDir, verbose) %copy mcf nifti fixed epi to nifti mrvista folder
                 copy_files(retinoNiftiFixedFolder, '*gems*.nii.gz', fullfile(retinoMrNiftiDir,gemsFile), verbose) %copy nifti fixed gems to nifti mrvista folder
                 copy_files(mprageNiftiFixedFolder, '*nu_RAS_NoRS*.nii.gz', fullfile(retinoMrNiftiDir,mprageFile), verbose) %copy nifti fixed mprage to nifti mrvista folder
+                check_files(retinoMrNiftiDir,'*epi*mcf*.nii.gz', param.retinoEpiNb, 0, verbose); %looking for 1 txt file called epiHeaders_FIXED
+                close all;
                 init_session(retinoMrSessionFolder, retinoMrNiftiDir, 'inplane',fullfile(retinoMrNiftiDir,gemsFile),'functionals','*epi*mcf*.nii*','vAnatomy',fullfile(retinoMrNiftiDir,mprageFile),...
-                    'sessionDir',retinoMrSessionFolder,'subject', subjID)
+                    'sessionDir',retinoMrSessionFolder,'subject', subjID)%,'scanGroups', 1:param.retinoEpiNb)
                 %alternative: kb_initializeVista2_retino(retinoMrSessionFolder, subjID)
                 dispi(' --------------------------  retino epi: end of mrVista session initialization ----------------------------------------', verbose)
                 
@@ -435,8 +441,11 @@ try
     record_notes('off');
 catch err
     try
-        cd(subj_dir)
+        %cd(subj_dir)
         record_notes('off');
+        save('errorLog', 'err')
+        clear all
+        load('errorLog', 'err')
         rethrow(err);
     catch err2
         rethrow(err2);
