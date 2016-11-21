@@ -1,3 +1,4 @@
+disp('Running startup file, updated 18 nov 2016')
 restoredefaultpath
 cd ~/Desktop
 %randomizing internal state for randomness for rand and randn?
@@ -9,23 +10,16 @@ disp('Randomizing randomness')
 %randn('state',sum(100*clock));
 
 %EXPERIMENT PATH
- path(path,genpath('/Users/adrienchopin/Desktop/google drive/recherches partiel/2013_RoAD_Relative_or_Absolute_Disparities'))
+ path(path,genpath('/Users/adrienchopin/Desktop/Drive Berkeley/recherches partiel/2013_RoAD_Relative_or_Absolute_Disparities'))
  disp('Loaded path to your experiments: ROAD')
- path(path,'/Users/adrienchopin/Desktop/google drive/recherches partiel/2014_STaM_Stereo_Training_and_MRI/fMRI - stimulation')
- path(path,genpath('/Users/adrienchopin/Desktop/google drive/recherches partiel/2014_STaM_Stereo_Training_and_MRI/JST - Jian Stereo Training/'))
- path(path,genpath('/Users/adrienchopin/Desktop/google drive/recherches partiel/2014_STaM_Stereo_Training_and_MRI/ERDS - Eyetracked Random Dot Stereotest/'))
+ path(path,'/Users/adrienchopin/Desktop/Drive Berkeley/recherches partiel/2014_STaM_Stereo_Training_and_MRI/fMRI - stimulation')
+ path(path,genpath('/Users/adrienchopin/Desktop/Drive Berkeley/recherches partiel/2014_STaM_Stereo_Training_and_MRI/JST - Jian Stereo Training/'))
+ path(path,genpath('/Users/adrienchopin/Desktop/Drive Berkeley/recherches partiel/2014_STaM_Stereo_Training_and_MRI/ERDS - Eyetracked Random Dot Stereotest/'))
  disp('Loaded path to your experiments: STAM - fMRI / JST / ERDS')
- functionPath = genpath('~/Desktop/google drive/fonctions_MATLAB');
+ functionPath = genpath('~/Desktop/Drive Berkeley/fonctions_MATLAB');
  path(path, functionPath);
  disp('Loaded path to your personal libraries.')
  clear all
-
-% VISTASOFT AND CO - Here, we give the choice between loading vsitasoft 2011 or vistasoft 2015
-disp('[vistaPathStart] Which vistasoft toolbox would you like to use?')
-%disp('1. the 2011 version (megavista - for compatibility)')
-%version = str2double(input('2. the 2015 version (Pipeline_AS)  ','s'));
-disp('Skip input for vistasoft version and default to the 2015 version for Pipeline_AS')
-version =2;
 
 %Add Freesurfer path to the path
 fshome = '/Applications/freesurfer';
@@ -52,11 +46,11 @@ setenv('PERL5LIB', '/Applications/freesurfer/mni/Library/Perl/Updates/5.10.0');
 %quick sanity checks
     spmPath = '~/Desktop/spm12';
     knkPath = '~/Desktop/KNK';
-    mricron = '~/Desktop/mricron';
+    mricron = '/Applications/MRIcroGL';
     
-    if (exist(spmPath,'dir') ~= 7); error('Startup - spm does not exist'); end
-    if (exist(knkPath,'dir') ~= 7); error('Startup - KNK does not exist'); end
-    if (exist(mricron,'dir') ~= 7); error('Startup - mricron does not exist'); end
+    if (exist(spmPath,'dir') ~= 7); warning('Startup - spm does not exist'); end
+    if (exist(knkPath,'dir') ~= 7); warning('Startup - KNK does not exist'); end
+    if (exist(mricron,'dir') ~= 7); warning('Startup - MRIcroGL does not exist'); end
     
 %Add spm files to the path
 path(genpath(spmPath), path); %path to your spm folder
@@ -74,44 +68,34 @@ fsldirmpath = sprintf('%s/etc/matlab',fsldir);
 path(path, genpath(fsldirmpath));
 disp('Defined FSL directory and loaded path to (fsldir)/etc/matlab.')
 
-%Add MRIcron to the path
+%Add MRIcroGL to the path
 path(mricron, path);
-disp('Loaded path to MRIcron on top.')
+disp('Loaded path to MRIcroGL on top.')
 
-%the 2011 version (megavista)
-if version == 1
-    disp('Loading path to vista tools on top')
-    path(genpath('~/Desktop/Megavista/vistasoft'), path);
-    path(genpath('~/Desktop/Megavista/silverlab_vista_tools'), path);
-    disp('You are using vistasoft 2011 (Megavista)')
-    disp('Loading Sara''s path on top.')
-    path(genpath('~/Desktop/Megavista/zUsers/Sara'), path);
-    disp('Loading personal megavista path on top (zUser/Adrien).')
-    path(genpath('~/Desktop/Megavista/zUsers/Adrien'), path);
-elseif version == 2 %the 2015 version Pipeline_AS
     pipelinePath='~/Desktop/Pipeline_AS';
     vistasoftPath=[pipelinePath,'/vistasoft'];
     persoPath = [pipelinePath, '/Users/Adrien'];
-    
+    persoPath2 = [pipelinePath, '/Users/Justin'];
     %quick sanity checks
-    if (exist(vistasoftPath,'dir') ~= 7); error('Startup - vistasoft does not exist'); end
     if (exist(pipelinePath,'dir') ~= 7); error('Startup - Pipeline_AS does not exist'); end
-    if (exist(persoPath,'dir') ~= 7); error('Startup - vistasoft does not exist'); end
+    if (exist(vistasoftPath,'dir') ~= 7); error('Startup - vistasoft does not exist'); end
+    if (exist(persoPath,'dir') ~= 7); error('Startup - personal path does not exist'); end
+    if (exist(persoPath2,'dir') ~= 7); error('Startup - other personal path does not exist'); end
     
     path(genpath(vistasoftPath), path);
     disp('You are using vistasoft 2015')
-    disp('Loading Fixes, Tools, Functions and Modules folders from Pipeline_AS on top')
+    disp('Loading Fixes, Tools, Functions, Modules and Development folders from Pipeline_AS on top')
     path(genpath([pipelinePath, '/Fixes']), path);
     path(genpath([pipelinePath, '/Tools']), path);
     path(genpath([pipelinePath, '/Modules']), path);
     path(genpath([pipelinePath, '/Functions']), path);
-    disp(['Loading personal path first on top: ', persoPath])
+    path(genpath([pipelinePath, '/Development']), path);
+    disp(['Loading personal paths first on top: ', persoPath])
+    path(genpath(persoPath2), path);
     path(genpath(persoPath), path);
-else
-    error('Input not understood - please reload vistaPathStart.m')
-end
 
-clear version fsmatlab fsfasttoolbox fsfasthome fsPerl fsSubjects fshome fsSubjects persoPath pipelinePath vistasoftPath knkPath mricron
+
+clear all
 % %Add Freesurfer path to the path
 % setenv('FREESURFER_HOME', '/Applications/freesurfer')
 % fshome = getenv('FREESURFER_HOME');
