@@ -386,18 +386,17 @@ try
         case {12}  %   12. retino/epi: mesh creation
              dispi(' --------------------  ',step, '. retino/epi: mesh creation / inflating ------------------------------', verbose) 
              initialPath=cd;
-             cd(retinoMrSessionFolder)
+             cd(retinoMrSessionFolder);
              remove_previous(retinoMeshFolder, verbose);
              check_folder(retinoMrSessionFolder, 1, verbose);
              check_folder(retinoMeshFolder, 0, verbose);
              create_mesh(retinoMeshFolder, 600, verbose)
-   %         create_mesh
              dispi('Checking for output mesh files in Mesh folder', verbose)
              check_files(retinoMeshFolder, 'lh_pial.mat', 1, verbose);
              check_files(retinoMeshFolder, 'rh_pial.mat', 1, verbose);
              check_files(retinoMeshFolder, 'lh_inflated.mat', 1, verbose);
              check_files(retinoMeshFolder, 'rh_inflated.mat', 1, verbose);
-             cd(initialPath)
+             cd(initialPath);
              dispi(' --------------------------  retino/epi: end of mesh creation / inflating ----------------------------------------', verbose)
 
             %   13. retino epi: pRF model

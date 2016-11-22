@@ -22,16 +22,16 @@ function create_mesh(meshFolder, nbOfIterations, verbose)
 dispi('Opening connection to mrm server', verbose)
 mrmStart(1,'localhost');
 
-
 % build and inflate left hemisphere mesh
 % 4 GUIs will appear - the first is the build parameters, you can accept the default values. the second should ask for 
 % confirmation that the appropriate class file was found. the third will ask you to save the pial surface for the
 % hemisphere you're working on, our naming convention is lh_pial for the left hemisphere (should be saved in mesh
-% directory). the fourth asks for smoothing parameters - try 600 iterations
+% directory): ignore it because we save it from command line afterthat. the fourth asks for smoothing parameters - default should be our value. 
 
-dispi('Opening hidden gray view', verbose)
+dispi('Opening left hidden gray view', verbose)
 vw=initHiddenGray;
 dispi('Still using GUI for mesh input parameters: PLEASE ACCEPT ALL DEFAULT - CANCEL GUIs for SAVING files', verbose)
+dispi('It is normal that we grow no gray layers for the analysis.', verbose)
 dispi('Building left mesh', verbose)
 vw = meshBuild(vw, 'left');  MSH = meshVisualize( viewGet(vw, 'Mesh') );  
 filename=fullfile(meshFolder,'lh_pial.mat');
@@ -48,12 +48,8 @@ filename=fullfile(meshFolder,'lh_inflated.mat');
 dispi('Saving unfolded left mesh', verbose)
 mrmWriteMeshFile(MSH, filename, 1) %last parameter is verbose
 
-% build and inflate right hemisphere mesh
-% 4 GUIs will appear - the first is the build parameters, you can accept the default values. the second should ask for 
-% confirmation that the appropriate class file was found. the third will ask you to save the pial surface for the
-% hemisphere you're working on, our naming convention is rh_pial for the right hemisphere (should be saved in mesh
-% directory). the fourth asks for smoothing parameters - try 600 iterations
-dispi('Opening hidden gray view', verbose)
+% All same for right hemishphere
+dispi('Opening right hidden gray view', verbose)
 vw2=initHiddenGray;
 dispi('Building right mesh', verbose)
 vw2 = meshBuild(vw2, 'right');  MSH2 = meshVisualize( viewGet(vw2, 'Mesh') );  
