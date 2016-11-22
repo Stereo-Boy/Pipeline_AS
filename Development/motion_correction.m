@@ -118,7 +118,7 @@ end
 % run mcflirt 
 for x = 1:numel(files),
     % set sys_arg
-    sys_arg = sprintf('%s ','mcflirt',['-',type{1}],fsl_arg,varargin{:},'-in',['"',files{x},'"']);
+    sys_arg = sprintf('%s ','mcflirt','-in',['"',files{x},'"'],['-',type{1}],fsl_arg,varargin{:});
     % display sys_arg
     dispi(sys_arg,verbose);
     % run system
