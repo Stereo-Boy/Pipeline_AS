@@ -19,19 +19,21 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose)
 %   9. retino epi/gems: initialization of mrVista session
 %   10. retino epi/gems: alignment of inplane and volume
 %   11. retino epi: segmentation installation
-%   12. retino epi: pRF model
-%   13. retino epi: mesh visualization of pRF values
-%   14. retino epi: extraction of flat projections
-%   15. exp epi/gems: nifti conversion
-%   16. exp epi/gems: motion correction
-%   17. exp epi: artefact removal and MC parameter check
-%   18: exp epi/gems: nifti header repair
-%   19. exp epi/gems: initialization of mrVista session
-%   20. exp epi/gems: alignment of inplane and volume
-%   21. exp epi: segmentation installation
-%   22. exp epi: GLM sanity check
-%   23. exp epi: actual GLM model
-%   24. exp epi: mesh visualization
+%   12. retino/epi: mesh creation
+%   13. retino epi: pRF model
+%   14. retino epi: mesh visualization of pRF values
+%   15. retino epi: extraction of flat projections
+%   16. exp epi/gems: nifti conversion
+%   17. exp epi/gems: motion correction
+%   18. exp epi: artefact removal and MC parameter check
+%   19: exp epi/gems: nifti header repair
+%   20. exp epi/gems: initialization of mrVista session
+%   21. exp epi/gems: alignment of inplane and volume
+%   22. exp epi: segmentation installation
+%   23. exp epi: mesh creation
+%   24. exp epi: GLM sanity check
+%   25. exp epi: actual GLM model
+%   25. exp epi: mesh visualization
 %
 % Other inputs:
 % - subj_dir: directory path for subject analysis (string) - root of all
@@ -98,7 +100,7 @@ try
     
     % CHECKS THAT steps are numbers
     if isnumeric(stepList2run)
-        if stepList2run==0;            stepList2run=[1:24];   end
+        if stepList2run==0;            stepList2run=[1:12];   end
     else
         error('The step starter accepts only numeric descriptions.')
     end
@@ -117,6 +119,11 @@ try
         retinoNiftiFixedFolder = fullfile(subj_dir,'05_retino_nifti_fixed');
         retinoMrSessionFolder = fullfile(subj_dir,'06_retino_mrSession');
         retinoMrNiftiDir=fullfile(retinoMrSessionFolder,'nifti');
+        retinoMeshFolder=fullfile(retinoMrSessionFolder,'Mesh');
+        
+        %file names in vista session / nifti
+        gemsFile = 'gems_retino.nii.gz';
+        mprageFile = 'mprage_nu_RAS_NoRS.nii.gz';
         
         expDICOMfolder = fullfile(subj_dir,'01c_epi_exp_DICOM');
         expPARfolder = fullfile(subj_dir,'01d_epi_exp_PAR');
@@ -125,9 +132,7 @@ try
         expNiftiFixedFolder = fullfile(subj_dir,'05_exp_nifti_fixed');
         expMrSessionFolder = fullfile(subj_dir,'06_exp_mrSession');
     
-        %file names in vista session / nifti
-        gemsFile = 'gems_retino.nii.gz';
-        mprageFile = 'mprage_nu_RAS_NoRS.nii.gz';
+
     
     dispi(' --------------------------  End of pipeline initialization  ----------------------------------------', verbose)
     
@@ -374,15 +379,32 @@ try
              dispi(' --------------------  ',step, '. retino epi/gems: install of segmentation  ------------------------------', verbose) 
              initialPath=cd;
              cd(retinoMrSessionFolder)
-             installSegmentation_JAS(retinoMrSessionFolder, mprageSegmentedFolder, retinoMrNiftiDir, verbose)
+             install_segmentation(retinoMrSessionFolder, mprageSegmentedFolder, retinoMrNiftiDir, verbose)
              cd(initialPath)
-             dispi(' --------------------------  retino epi: end of motion param checks  ----------------------------------------', verbose)
+             dispi(' --------------------------  retino epi: end of install of segmentation  ----------------------------------------', verbose)
              
-            %   12. retino epi: pRF model
-            %   13. retino epi: mesh visualization of pRF values
-            %   14. retino epi: extraction of flat projections
+        case {12}  %   12. retino/epi: mesh creation
+             dispi(' --------------------  ',step, '. retino/epi: mesh creation / inflating ------------------------------', verbose) 
+             initialPath=cd;
+             cd(retinoMrSessionFolder)
+             remove_previous(retinoMeshFolder, verbose);
+             check_folder(retinoMrSessionFolder, 1, verbose);
+             check_folder(retinoMeshFolder, 0, verbose);
+             create_mesh(retinoMeshFolder, 600, verbose)
+   %         create_mesh
+             dispi('Checking for output mesh files in Mesh folder', verbose)
+             check_files(retinoMeshFolder, 'lh_pial.mat', 1, verbose);
+             check_files(retinoMeshFolder, 'rh_pial.mat', 1, verbose);
+             check_files(retinoMeshFolder, 'lh_inflated.mat', 1, verbose);
+             check_files(retinoMeshFolder, 'rh_inflated.mat', 1, verbose);
+             cd(initialPath)
+             dispi(' --------------------------  retino/epi: end of mesh creation / inflating ----------------------------------------', verbose)
+
+            %   13. retino epi: pRF model
+            %   14. retino epi: mesh visualization of pRF values
+            %   15. retino epi: extraction of flat projections
             
-         case {15}    % 15. Exp epi/gems: nifti conversion and fix of nifti headers
+         case {16}    % 16. Exp epi/gems: nifti conversion and fix of nifti headers
                 dispi(' -------  ',step, '. Exp epi/gems: nifti conversion and fix of nifti headers', verbose)
                 %basic checks
                 dispi(' -------  Starting nifti conversion with dcm2niix from ',expDICOMfolder, ' to  ', expNiftiFolder, verbose)
@@ -415,9 +437,11 @@ try
                 dispi(' --------------------------  End of exp epi nitfi conversion  ----------------------------------------', verbose)
                 
             
-            %   17. exp epi: artefact removal and MC parameter check
-            %   18. exp epi/gems: motion correction and fix nifti headers
-            case {18}
+            %   17. exp epi/gems: motion correction
+            %   18. exp epi: artefact removal and MC parameter check
+
+
+            case {19}% 19: exp epi/gems: nifti header repair
                 dispi(' --------------------------  Fixing nifti headers for exp epi/gems----------------------------------------', verbose)
                 dispi('Check that source folders exist for that step', verbose)
                 check_folder(expNiftiFolder, 1, verbose); %check that DICOM folder exists
@@ -426,12 +450,13 @@ try
                 check_files(expNiftiFolder,'*.nii.gz', expectedFiles, 1, verbose);
                 dispi(' --------------------------  End of nifti headers for exp epi/gems ----------------------------------------', verbose)
             
-            %   19. exp epi/gems: initialization of mrVista session
-            %   20. exp epi/gems: alignment of inplane and volume
-            %   21. exp epi: segmentation installation
-            %   22. exp epi: GLM sanity check
-            %   23. exp epi: actual GLM model
-            %   24. exp epi: mesh visualization
+            %   20. exp epi/gems: initialization of mrVista session
+            %   21. exp epi/gems: alignment of inplane and volume
+            %   22. exp epi: segmentation installation
+            %   23. exp epi: mesh creation
+            %   24. exp epi: GLM sanity check
+            %   25. exp epi: actual GLM model
+            %   25. exp epi: mesh visualization
             otherwise
                 dispi('Warning: this step is not recognized: ', step, verbose)
         end
@@ -444,6 +469,7 @@ catch err
         %cd(subj_dir)
         record_notes('off');
         save('errorLog', 'err')
+        whos
         clear all
         load('errorLog', 'err')
         rethrow(err);

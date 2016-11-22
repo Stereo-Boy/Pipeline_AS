@@ -1,4 +1,4 @@
-function success = removePrevious(folder, verbose)
+function success = remove_previous(folder, verbose)
 % success = removePrevious(folder, verbose)
 %
 % Checking whether the folder exists (from a previous instance) and removes

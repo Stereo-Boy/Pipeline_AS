@@ -1,0 +1,7 @@
+%pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/DC95/pipeline_JAS', 'DC95', 'notes')
+pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/EM21/pipeline_JAS', 'EM21', 'notes')
+pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/HB85/pipeline_JAS', 'HB85', 'notes')
+pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/KK100/pipeline_JAS', 'KK100', 'notes')
+pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/KR104/pipeline_JAS', 'KR104', 'notes')
+pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/LYY65/pipeline_JAS', 'LYY65', 'notes')
+pipeline_JAS(1:2, '/Users/adrienchopin/Desktop/Big_data_STAM/KM79/pipeline_JAS', 'KM79', 'notes')

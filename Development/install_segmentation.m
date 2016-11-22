@@ -1,8 +1,9 @@
-function installSegmentation_JAS(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
-% installSegmentation_JAS(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
+function install_segmentation(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
+% install_segmentation(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
 % mrVistaFolder - the mrVista session folder
 % segmentationFolder - the folder containing last t1_class edited files
 % niftiFolder - where this files should go in the mrVistaFolder 
+% To avoid errors, all paths should be fullfile
 % adapted for JAS in 2016
 % Adrien Chopin - 2015
 % Adapted from kb_installSeg.m
@@ -27,7 +28,7 @@ mrVista;
 query = []; %should trigger volume, gray or flat coords calculation if missing
 keepAllNodes = 1; %for more flexibility
 [tf, nbFiles] = check_files(segmentationFolder, '*t1_class*edited*', 1, 1, verbose);
-copy_files(segmentationFolder, '*t1_class*edited*', niftiFolder, verbose) %copy all nifti mprage files
+copy_files(segmentationFolder, '*t1_class*edited*', niftiFolder, verbose) %copy t1 class (edited) files
 segmfile = list_files(niftiFolder, '*t1_class*edited*', 1);
 numGrayLayers = 3;
 
