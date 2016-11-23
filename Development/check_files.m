@@ -1,4 +1,4 @@
-function tf = check_files(folder, expr, n, forceError, verbose)
+function [tf, nbFiles] = check_files(folder, expr, n, forceError, verbose)
 %  tf = check_files(folder, expr, n, forceError, verbose)
 % Check if number of files of certain expression exist.
 % 
@@ -37,8 +37,8 @@ tf = (nbFiles == n);
 if tf==1
     dispi(nbFiles,'/',n,' files correctly detected (', expr, ') in ', cd, verbose)
 else
-    if forceError, erri('Nb of files is incorrect: ', nbFiles,'/',n,' files detected in ', cd)
-    else warni('Nb of files is incorrect: ', nbFiles,'/',n,' files detected.in ', cd, verbose)
+    if forceError, erri('Nb of files is incorrect: (',expr,'): ', nbFiles,'/',n,' files detected in ', cd)
+    else warni('Nb of files is incorrect (',expr,'): ', nbFiles,'/',n,' files detected.in ', cd, verbose)
     end
 end
 cd(currentPwd);

@@ -1,4 +1,4 @@
-function fileOrFolder = checkFolder(fileOrFolder, forceError, verbose)
+function fileOrFolder = check_folder(fileOrFolder, forceError, verbose)
 % checkFolder(fileOrFolder, forceError, verbose)
 %
 % Checking whether the input is a file or folder or does not exist and returning the
@@ -34,7 +34,7 @@ else
                 erri([fileOrFolder, ' does not exist'])
             else
                 warni([fileOrFolder, ' does not exist'], verbose)
-                dispi('checkFolder will attempt to create folder: ', fileOrFolder, verbose)
+                dispi('check_folder will attempt to create folder: ', fileOrFolder, verbose)
                 [success,message]=mkdir(fileOrFolder);
                 if success; dispi('Created ', fileOrFolder); else warni('Could not create ', fileOrFolder, ' because: ', message, verbose);end    
             end
@@ -43,11 +43,11 @@ else
                 erri([fileOrFolder, ' input is a file rather than a folder!'])
             else
                 warni([fileOrFolder, ' input is a file rather than a folder!'], verbose)
-                dispi('checkFolder will attempt to create folder ', fileOrFolder, verbose)
+                dispi('check_folder will attempt to create folder ', fileOrFolder, verbose)
                 [success,message]=mkdir(fileOrFolder);
                 if success; dispi('Created ', fileOrFolder); else warni('Could not create ', fileOrFolder, ' because: ', message, verbose);end    
             end
         case {7} %folder
-            dispi(fileOrFolder, ': folder exists', verbose)
+            dispi('Folder exists:', fileOrFolder, verbose)
     end
 end

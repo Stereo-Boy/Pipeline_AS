@@ -28,10 +28,12 @@ end
 if ~exist('vox_factor','var'),
     vox_factor = 0.5;
 end
+if ~exist('verbose','var'),    verbose = 'verboseON';end
 
 % get files
 d = dir(fullfile(mc_dir,'epi*.par'));
 files = fullfile(mc_dir,{d.name});
+dispi('Working on ', numel(files),' EPI detected .par files (not gems)', verbose)
 
 % get first epi nifti
 clear d; d = dir(fullfile(mc_dir,'epi*.nii*'));
@@ -69,22 +71,23 @@ end
 
 % find bad TRs
 vox_arr = repmat(vox_dims * vox_factor, size(trans,1),1);
-bool_tr = trans > vox_arr; disp(bool_tr);
+bool_tr = trans > vox_arr; 
 
 % bad TRs are one index ahead since diff subtracts 2nd - 1st etc.
 bad_trs(:,2) = find(any(bool_tr, 2)) + 1;
 
 % plot translations
-plot(trans); hold; h = gcf;
+plot(2:(size(trans,1)+1), trans); hold on; h = gcf; %align TR parameters plots with bad TRs
 ylabel('Abs Max Translation (mm)');
 xlabel('Time (TR)'); 
 if ~isempty(bad_trs),
     plot(bad_trs(:,2), max(trans(:)), 'kx');
-    legend('X','Y','Z');
-else
     legend('X','Y','Z','Bad TRs');
+else
+    legend('X','Y','Z');
 end
-
+%show the threshold lines
+plot(vox_arr, '--');
 % save plot
 saveas(h,fullfile(mc_dir,'Motion_params'),'png');
 
