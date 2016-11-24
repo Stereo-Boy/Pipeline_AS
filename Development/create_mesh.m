@@ -18,7 +18,7 @@ function create_mesh(meshFolder, nbOfIterations, verbose)
 % see the website below (specifically answers 2 & 3) for helpful information about this process 
 % http://apple.stackexchange.com/questions/3271/how-to-get-rid-of-firewall-accept-incoming-connections-dialog
 
-
+if ~exist('verbose','var'), verbose='verboseON'; end
 dispi('Opening connection to mrm server', verbose)
 mrmStart(1,'localhost');
 
@@ -68,11 +68,6 @@ filename2=fullfile(meshFolder, 'rh_inflated.mat');
 dispi('Saving unfolded right mesh', verbose)
 mrmWriteMeshFile(MSH2, filename2, 1) %last parameter is verbose
 
-% close windows and connection to the mesh server
-dispi('Closing all windows and connections to the mesh server',verbose)
 close all;
-mrmCloseWindow(1001,'localhost');
-mrmCloseWindow(1003,'localhost');
-mrmCloseWindow(1005,'localhost');
-mrmCloseWindow(1007,'localhost');
-unix('kb_mrmClose.sh');
+% close windows and connection to the mesh server
+close_mesh_server(verbose)

@@ -414,7 +414,6 @@ try
                 dispi('Check that pRF model was run', verbose)
                 check_files(fullfile(retinoMrSessionFolder,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists
                 retinoModelFile = list_files(fullfile(retinoMrSessionFolder,'Gray/Averages'), '*fFit*',1);
-                
                 curdir = pwd; 
                 cd(retinoMrSessionFolder)
                 vol = initHiddenGray; %open Gray
@@ -425,16 +424,15 @@ try
                 vol=setDisplayMode(vol,'ph');%select phase map: View | Phase map
                 %vw=refreshScreen(vw);
                 dispi('Opening connection to mrm server', verbose)
-                %mrmStart(1,'localhost'); %start mrm mesh visualization server
-                %input('Press a key when server ready')
+                mrmStart(1,'localhost'); %start mrm mesh visualization server
+                input('Press a key when server ready')
                 dispi('Opening a gray view for left hemisphere and loading the inflated mesh into it', verbose)
                 vol = meshLoad(vol, fullfile(retinoMeshFolder,'lh_inflated.mat'), 1); %Gray | Surface Mesh | Load and Display 
-                %input('Press a key when server ready')
+                input('Press a key when server ready')
                 vol = meshColorOverlay(vol); %Gray | update mesh
                 cd(curdir)
-                input('Press a key to quit and close visualization')
+                input('Press a key to quit')
                 close_mesh_server(verbose);
-                
                 dispi(' -------------------------- retino epi: end of mesh visualization of pRF values ----------------------------------------', verbose)
                 
             %   15. retino epi: extraction of flat projections
