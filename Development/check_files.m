@@ -29,17 +29,14 @@ if exist('forceError', 'var')==0; forceError=0; end
 if (~exist('folder','var')||~exist(folder, 'dir')), help(mfilename);erri('Missing folder'); end
 if ~exist('expr','var'), expr='*.*';warni('check_files expr parameter missing - defaulting to all files in folder', verbose); end
 
-currentPwd=pwd;
-cd(folder);
-nbFiles=numel(dir(expr));
+nbFiles=numel(dir(fullfile(folder,expr)));
 tf = (nbFiles == n);
 
 if tf==1
-    dispi(nbFiles,'/',n,' files correctly detected (', expr, ') in ', cd, verbose)
+    dispi(nbFiles,'/',n,' files correctly detected (', expr, ') in ', folder, verbose)
 else
-    if forceError, erri('Nb of files is incorrect: (',expr,'): ', nbFiles,'/',n,' files detected in ', cd)
-    else warni('Nb of files is incorrect (',expr,'): ', nbFiles,'/',n,' files detected.in ', cd, verbose)
+    if forceError, erri('Nb of files is incorrect: (',expr,'): ', nbFiles,'/',n,' files detected in ', folder)
+    else warni('Nb of files is incorrect (',expr,'): ', nbFiles,'/',n,' files detected.in ', folder, verbose)
     end
 end
-cd(currentPwd);
 return;
