@@ -228,13 +228,12 @@ end
 
 function local_stepchecks(params, fields, varargin)
     % get verboseOFF/errorON
-    if strncmp(varargin,'verbose',7),
+    if any(strncmp(varargin,'verbose',7)),
         verbose = varargin{strncmp(varargin,'verbose',7)};
     else % default on
         verbose = 'verboseON';
     end
-
-    if strncmp(varargin,'error',5),
+    if any(strncmp(varargin,'error',5)),
         err = varargin{strncmp(varargin,'error',5)};
     else % default off
         err = 'errorOFF';
