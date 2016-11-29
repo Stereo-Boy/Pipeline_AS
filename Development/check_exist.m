@@ -69,6 +69,9 @@ err = varargin(strncmpi(varargin,'error',5));
 if isempty(err), err = 'errorOFF'; else err = err{1}; end;
 varargin(strcmp(varargin,err)) = [];
 
+% if all varargins empty after error/verbose, return
+if all(cellfun('isempty',varargin)), return; end;
+
 % for each varargin, switch type
 for i = 1:numel(varargin),
     % if numeric, set to ck

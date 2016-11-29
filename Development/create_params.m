@@ -27,12 +27,7 @@ function params = create_params(params, fields, values)
 
 % init defaults
 if ~exist('params','var')||~isstruct(params), params = struct; end;
-if ~exist('fields','var')||isempty(fields),
-    % init fields
-    fields = {'mprage_dcm_dir','retino_dcm_dir','exp_dcm_dir',...
-              'exp_par_dir','retino_n','exp_n','mprage_slc_n',...
-              'retino_tr_n','exp_tr_n','pRF_dummy_n'};
-end
+if ~exist('fields','var')||isempty(fields), return; end;
 if ~iscell(fields), fields = {fields}; end;
 if ~exist('values','var')||isempty(values),
     % init values

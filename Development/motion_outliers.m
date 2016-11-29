@@ -16,12 +16,12 @@ function tabl = motion_outliers(mc_dir,varargin)
 %
 % tabl = 
 % 
-%     'epi01_retino_12_conf...'    [13]    '52, 53, 55, 68, 69, ...'
-%     'epi02_retino_13_conf...'    [ 6]    '3, 68, 69, 85, 91, 126' 
-%     'epi03_retino_14_conf...'    [ 4]    '67, 68, 69, 85'         
-%     'epi04_retino_15_conf...'    [ 7]    '18, 36, 37, 68, 69, ...'
-%     'epi05_retino_16_conf...'    [ 7]    '5, 29, 30, 68, 69, 9...'
-%     'epi06_retino_17_conf...'    [ 8]    '2, 3, 21, 40, 68, 69...'
+%     'epi01_retino_12_conf...'    [13]    52, 53, 55, 68, 69, ...'
+%     'epi02_retino_13_conf...'    [ 6]    3, 68, 69, 85, 91, 126' 
+%     'epi03_retino_14_conf...'    [ 4]    67, 68, 69, 85'         
+%     'epi04_retino_15_conf...'    [ 7]    18, 36, 37, 68, 69, ...'
+%     'epi05_retino_16_conf...'    [ 7]    5, 29, 30, 68, 69, 
+%     'epi06_retino_17_conf...'    [ 8]    2, 3, 21, 40, 68, 69
 % 
 % Created by Justin Theiss 11/2016
 
@@ -44,7 +44,5 @@ for x = 1:numel(confiles),
     % set number of outliers
     tabl{x,2} = size(eval(convars{x}),2);
     % set indices of outliers
-    idx = find(sum(eval(convars{x}),2))';
-    idx = sprintf('%d, ',idx);
-    tabl{x,3} = idx(1:end-2);
+    tabl{x,3} = find(sum(eval(convars{x}),2))';
 end
