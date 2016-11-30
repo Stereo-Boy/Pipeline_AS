@@ -290,19 +290,20 @@ try
                 
                 switch reference
                     case {1}
-                        dispi('We want mcFLIRT to motion correct the epis to the downsampled resolution GEMS') 
-                        dispi('In that version, the EPIs will not be resampled at high resolution')
-                        epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
-                        gems = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
-                        gemsFileRef=fullfile(retinoMCfolder,'gemsRef90.nii.gz');
-                        fslresample(gems,gemsFileRef, '-ref', epis{1}, verbose)
+                        
                     case {2} % 2. gems at original resolution - epi will be upsampled to gems resolution 
                         dispi('We want mcFLIRT to motion correct the epis to the higher resolution GEMS') 
                         dispi('In that version, we will align the EPIs to the high resolution GEMS, which means EPIS will be resampled at high resolution')
-                        gemsFileRef = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
+gemsFileRef = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
                         gemsFileRef=gemsFileRef{1};
-                end
-                                        
+                %dispi('To avoid mcFLIRT resampling the epi to this higher resolution, we will first resample the GEMS with the EPI resolution')
+                        
+                %epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
+                
+                %gemsFileRef=fullfile(retinoMCfolder,'gemsRef.nii.gz');
+                 %gemsFileRef=fullfile(subj_dir,'gems90x90.nii.gz');
+                %fslresample(gemsFile,gemsFileRef, '-ref', epis{1}, verbose)
+                
 
                 %motion correct the epi to the higher resolution gems (as a ref file)
                 dispi('Motion-correcting all epis to the gems reference file: ', gemsFileRef, verbose);
