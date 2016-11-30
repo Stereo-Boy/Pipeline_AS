@@ -14,7 +14,7 @@ function motion_correction(mc_dir, expr, type, varargin)
 %   'meanvol' - uses mean volume across TRs of each input file. additional 
 %               input can be a file to create a mean reference volume 
 %               (default is mean volume across TRs of each input)
-% varargin: other options to input for mcflirt (e.g., '-plots','-reports', etc.)
+% varargin: other options to input for mcflirt (e.g., '-plots','-report', etc.)
 % 'verboseON': string option to turn on verbose printout (default is 'verboseOFF')
 %
 % Outputs created:
@@ -53,8 +53,8 @@ if isempty(varargin), fsl_arg = ''; end;
 if any(strncmp(varargin,'verbose',7)),
     verbose = varargin{strncmp(varargin,'verbose',7)};
     varargin(strcmp(varargin,verbose)) = [];
-else % default off
-    verbose = 'verboseOFF';
+else % default on
+    verbose = 'verboseON';
 end
 
 % display inputs

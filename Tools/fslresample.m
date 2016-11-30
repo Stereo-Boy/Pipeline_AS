@@ -79,7 +79,7 @@ if exist('vol_sz','var') || exist('vox_sz','var'),
 end
 
 % run flirt
-loop_system('flirt','-in',infile,'-out',outfile,'-ref',reffile,'-applyxfm',args{:},verbose);
+loop_system('flirt','-in',['"',infile,'"'],'-out',outfile,'-ref',reffile,'-applyxfm',args{:},verbose);
 
 % delete tmpvol if exists
 if exist('tmpvol.nii.gz', 'file'), delete('tmpvol.nii.gz'); end;

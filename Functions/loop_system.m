@@ -10,6 +10,8 @@ function [status, result] = loop_system(varargin)
 % status: cell array of statuses based on each system output
 % result: cell array of results based on each system output
 %
+% Example:
+%
 % Created by Justin Theiss 11/2016
 
 status = {}; result = {};
@@ -56,7 +58,7 @@ for f = 1:n,
     [status{f},result{f}] = system(options{f}); 
     dispi(result{f}, verbose);
 end;
-return;
+end
 
 function arg = setup_arg(arg)
 % setup arguments for system call
@@ -65,8 +67,8 @@ function arg = setup_arg(arg)
 if ~ischar(arg), 
     arg = num2str(arg);
 end
-% if file//dir, set ""
-if exist(arg, 'file')||exist(arg, 'dir'),
+% if file/dir, set ""
+if ~isempty(fileparts(arg)),
     arg = ['"' arg '"'];
 end
-return;
+end

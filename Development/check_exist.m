@@ -5,7 +5,9 @@ function [tf, n] = check_exist(varargin)
 %
 % Optional Inputs:
 % folder: folder to check if exists (or contains files)
-% expr: expression to search for files (e.g., 'epi*.nii*')
+% expr: expression to search for files (e.g., 'epi*.nii*'), if expr ends
+% with a file separator (i.e. '/' or '\'), only directories will be
+% compared
 % n: number of expected files
 %
 % Outputs:
@@ -69,6 +71,9 @@ err = varargin(strncmpi(varargin,'error',5));
 if isempty(err), err = 'errorOFF'; else err = err{1}; end;
 varargin(strcmp(varargin,err)) = [];
 
+% if all varargins empty after error/verbose, return
+if all(cellfun('isempty',varargin)), return; end;
+
 % for each varargin, switch type
 for i = 1:numel(varargin),
     % if numeric, set to ck
@@ -90,13 +95,13 @@ if ~exist('ck','var'), ck = ''; end;
 % dir files
 d = dir(fullfile(fld,expr));
 
-% if fld/expr, get only files
-if ~isempty(fld) && ~isempty(expr),
-    d = d(~[d.isdir]);
-    ftype = 'files';
-elseif any(strfind(fld,'*')) % get n of folders
+% if expr ends with file sep or fld contains *, directories
+if strcmp(expr(end),filesep)||any(strfind(fld,'*')),
     d = d([d.isdir]);
     ftype = 'folders';
+elseif ~isempty(fld) && ~isempty(expr), % files
+    d = d(~[d.isdir]);
+    ftype = 'files';
 else % check isdir(fld)
     d = ones(isdir(fld));
     ftype = 'folder';
