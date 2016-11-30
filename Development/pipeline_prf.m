@@ -1,5 +1,5 @@
 function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varargin)
-% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'],['errorON'])
+% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'], ['errorON'])
 % 
 % Inputs:
 % steps - number or numberic array of steps to run (default is all, see below)
@@ -91,9 +91,12 @@ for x = steps
     [~, newfields] = local_getparams(params, x, 'defaults');
      
     % append dir to subj_dir with local_fullfile
-    dir_fields = regexp(newfields,'_dir$','match');
+    dir_fields = regexp([fields, newfields],'.*_dir$','match');
     dir_fields = [dir_fields{:}];
-    cellfun(@(x)assignin('caller', x, local_fullfile(subj_dir, eval(x))), dir_fields);
+    if ~isempty(dir_fields), % evaluate dir_fields in current context
+        if ~iscell(dir_fields), dir_fields = {dir_fields}; end;
+        cellfun(@(x)assignin('caller',x,local_fullfile(subj_dir,eval(x))),dir_fields);
+    end
     
     % check fields prior to step
     local_stepchecks(fields, err, verbose);
@@ -104,7 +107,7 @@ for x = steps
     switch x
         case 1 % nifti conversion
             % get dcm dirs
-            dcm_dirs = get_dir(dcm_dir,dcm_expr);
+            dcm_dirs = get_dir(dcm_dir,dcm_expr); 
             % run dcm2niix
             loop_system('dcm2niix','-z y','-f %f','-o',ni_dir,dcm_dirs(:),verbose);
         case 2 % nifti header repair
@@ -122,12 +125,12 @@ for x = steps
             loop_feval(@remove_frames,epis(:),dummy_n,verbose);
         case 6 % motion correction
             % copy files
-            dispi('Copying ',fullfile(nifix_dir,epi_expr),' to ',mc_dir,verbose);
-            copyfile(fullfile(nifix_dir,epi_expr),mc_dir);
+            dispi('Copying ',fullfile(nifix_dir,nifix_expr),' to ',mc_dir,verbose);
+            copyfile(fullfile(nifix_dir,nifix_expr),mc_dir);
             % get gems file
-            gems = get_dir(nifix_dir,ref_expr,1);
+            gems = get_dir(ref_dir,ref_expr,1);
             % motion correction
-            motion_correction(mc_dir,epi_expr,{'reffile',gems,1},...
+            motion_correction(mc_dir,nifix_expr,{'reffile',gems,1},...
                 '-plots','-report','-cost mutualinfo','-smooth 16',verbose);
         case 7 % motion outliers
             bad_trs = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
@@ -168,9 +171,9 @@ for x = steps
     end
 end
 catch err % if error, return
-    dispi('Error: ', err.message, verbose);
+    dispi(err.message, verbose);
     record_notes('off');
-    return;
+    rethrow(err);
 end
 
 % display done
@@ -211,7 +214,7 @@ for x = steps,
             values = cat(2, values, {5});
         case 6 % motion correction
             fields = cat(2, fields, {'mc_dir','mc_expr','ref_dir','ref_expr'});
-            values = cat(2, values, {'MoCo','*_mcf.nii*','nifti','gems*.nii*'});
+            values = cat(2, values, {'MoCo','*_mcf.nii*','nifti','gems_ret*.nii*'});
         case 7 % motion outliers
             fields = cat(2, fields, {});
             values = cat(2, values, {});
@@ -220,7 +223,7 @@ for x = steps,
             values = cat(2, values, {'mrVista_Session'});
         case 9 % alignment of inplane and volume
             fields = cat(2, fields, {'vol_dir','vol_expr','ref_slc_n'});
-            values = cat(2, values, {'Segmentation','mprage*.nii*',24});
+            values = cat(2, values, {'Segmentation','*mprage*.nii*',24});
         case 10 % segmentation installation
             fields = cat(2, fields, {});
             values = cat(2, values, {});

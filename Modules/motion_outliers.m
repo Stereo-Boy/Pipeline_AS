@@ -26,6 +26,8 @@ function tabl = motion_outliers(mc_dir,expr,varargin)
 %     'Users/epi05_retino_16.nii.gz'    [ 7]    [1x7 double] 
 %     'Users/epi06_retino_17.nii.gz'    [ 8]    [1x8 double]
 % 
+% Note: A *_confound file is only created for those files that have
+% outliers.
 % Created by Justin Theiss 11/2016
 
 % init vars
@@ -50,7 +52,10 @@ loop_system('fsl_motion_outliers','-i',files,'-o',confiles,varargin{:},verbose);
 
 % create table of outliers
 for x = 1:numel(confiles),
+    % set first column to files
     tabl{x,1} = files{x};
+    % check confile exists, if not skip
+    if ~check_exist(confiles{x},1,verbose), continue; end;
     % load confile
     load(confiles{x});
     % set number of outliers
