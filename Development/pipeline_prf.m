@@ -55,7 +55,7 @@ if ~any(strcmp(varargin,'verboseOFF')), verbose = 'verboseON'; end;
 if ~any(strcmp(varargin,'errorON')), err = 'errorOFF'; end;
 
 % get defaults from params based on steps
-params = local_getparams(params, steps, 'defaults'); % verbose
+params = local_getparams(params, steps, 'defaults');
 
 % set params as variables within function
 fields = fieldnames(params);
@@ -117,7 +117,7 @@ for x = steps
             %%%%%
         case 5 % removal of ''pRF dummy'' frames
             % get epis
-            epis = get_dir(nifix_dir,epi_expr);
+            epis = get_dir(nifix_dir,nifix_expr);
             % remove frames
             loop_feval(@remove_frames,epis(:),dummy_n,verbose);
         case 6 % motion correction
@@ -159,7 +159,7 @@ for x = steps
             create_mesh(mesh_dir,600,verbose);
             cd(initialPath);
         case 12 % pRF model
-            pRF_model(mr_dir,epi_dir,prf_params,true,verbose);
+            pRF_model(mr_dir,epi_dir,epi_expr,prf_params,true,verbose);
         case 13 % mesh visualization of pRF values
         case 14 % extraction of flat projections
         case 15 % exp epi: actual GLM model
@@ -180,7 +180,7 @@ dispi(repmat('-',1,20),'Pipeline finished ',dateTime,repmat('-',1,20),verbose);
 record_notes('off');
 end
 
-function [params, fields] = local_getparams(params, steps, type)
+function [params, fields, values] = local_getparams(params, steps, type)
 % set or get defaults from parameters for each step in steps
 %
 % input params will be not be overwritten. 
@@ -207,11 +207,11 @@ for x = steps,
             fields = cat(2, fields, {});
             values = cat(2, values, {});
         case 5 % removal of "pRF dummy" frames
-            fields = cat(2, fields, {'epi_expr','dummy_n'});
-            values = cat(2, values, {'epi*.nii*',5});
+            fields = cat(2, fields, {'dummy_n'});
+            values = cat(2, values, {5});
         case 6 % motion correction
-            fields = cat(2, fields, {'mc_dir','mc_expr','ref_expr'});
-            values = cat(2, values, {'MoCo','*_mcf.nii*','gems*.nii*'});
+            fields = cat(2, fields, {'mc_dir','mc_expr','ref_dir','ref_expr'});
+            values = cat(2, values, {'MoCo','*_mcf.nii*','nifti','gems*.nii*'});
         case 7 % motion outliers
             fields = cat(2, fields, {});
             values = cat(2, values, {});
@@ -219,8 +219,8 @@ for x = steps,
             fields = cat(2, fields, {'mr_dir'});
             values = cat(2, values, {'mrVista_Session'});
         case 9 % alignment of inplane and volume
-            fields = cat(2, fields, {'vol_expr','ref_slc_n'});
-            values = cat(2, values, {'mprage*.nii*', 24});
+            fields = cat(2, fields, {'vol_dir','vol_expr','ref_slc_n'});
+            values = cat(2, values, {'Segmentation','mprage*.nii*',24});
         case 10 % segmentation installation
             fields = cat(2, fields, {});
             values = cat(2, values, {});
@@ -228,8 +228,8 @@ for x = steps,
             fields = cat(2, fields, {'mesh_dir'});
             values = cat(2, values, {'Mesh'});
         case 12 % pRF model
-            fields = cat(2, fields, {'epi_dir','prf_params'});
-            values = cat(2, values, {'niftiFix',[]});
+            fields = cat(2, fields, {'epi_dir','epi_expr','prf_params'});
+            values = cat(2, values, {'MoCo','epi*_mcf.nii*',[]});
         case 13 % mesh visualization of pRF values
             fields = cat(2, fields, {});
             values = cat(2, values, {});
