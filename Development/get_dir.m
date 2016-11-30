@@ -30,6 +30,7 @@ function output = get_dir(fld, expr, n)
 % 
 %     '/Users/test.txt'    '/Users/text2.txt'
 %     
+% Note: get_dir automatically removes '.', '..', and '~' files/directories.
 % Created by Justin Theiss 11/2016
 
 % init vars
@@ -39,6 +40,12 @@ if ~exist('n','var')||isempty(n), n = []; end;
 
 % get dir of fld/expr
 d = dir(fullfile(fld, expr));
+
+% remove ., .., ~ files
+d = d(~strncmp({d.name},'.',1));
+d = d(~strncmp({d.name},'~',1));
+
+% set to output
 output = fullfile(fld, {d.name});
 
 % output number of files/folders

@@ -43,9 +43,9 @@ end
 function value = input_values(params, field)
     % init defaults
     if ~isfield(params, field)||isempty(params.(field)), 
-        if any(strfind(field,'_dir')), % uigetdir
+        if any(regexp(field,'_dir$')), % uigetdir
             value = pwd; 
-        elseif any(strfind(field,'_n')) % str2double
+        elseif any(regexp(field,'_n$')) % str2double
             value = [];
         else % inputdlg
             value = '';
@@ -54,14 +54,14 @@ function value = input_values(params, field)
         value = params.(field);
     end
     % return value using uigetdir/inputdlg
-    if isnumeric(value), % inputdlg number
+    if any(regexp(field,'_dir$')), % uigetdir folder
+        value = uigetdir(value, ['Choose ', field, ' directory']);
+        if ~any(value), value = []; end;
+    elseif any(regexp(field,'_n$')), % inputdlg number
         value = str2double(cell2mat(inputdlg(['Enter number for ',field],...
             '',1,{num2str(value)})));
         % set value to 0 if nan
         if isnan(value), value = []; end;
-    elseif isdir(value), % uigetdir folder
-        value = uigetdir(value, ['Choose ', field, ' directory']);
-        if ~any(value), value = []; end;
     elseif ischar(value), % inputdlg
         value = cell2mat(inputdlg(['Enter ',field],'',1,{value}));
     end

@@ -67,8 +67,8 @@ function arg = setup_arg(arg)
 if ~ischar(arg), 
     arg = num2str(arg);
 end
-% if file//dir, set ""
-if exist(arg, 'file')||exist(arg, 'dir'),
+% if file/dir, set ""
+if ~isempty(fileparts(arg)),
     arg = ['"' arg '"'];
 end
 end
