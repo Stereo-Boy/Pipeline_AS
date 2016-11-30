@@ -1,5 +1,5 @@
-function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, verbose)
-% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, verbose)
+function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varargin)
+% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'],['errorON'])
 % 
 % Inputs:
 % steps - number or numberic array of steps to run (default is all, see below)
@@ -8,9 +8,9 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, verbo
 % params - structure containing fields used as variables in the pipeline;
 % to see defaults, type pipeline_prf without arguments
 % notes_dir - string directory to save notes (default is ''; none)
-% verbose - 'verboseON' (default) or 'verboseOFF' to not display anything
-% in the command window
-% 
+% 'verboseOFF' - prevent displays in command window (default is 'verboseON')
+% 'errorON' - throw error if checks prior to each step fail (default is 'errorOFF')
+%
 % Outputs: 
 % params - structure containing fields used as variables in the pipeline
 %
@@ -51,7 +51,8 @@ end;
 if ~exist('steps','var')||all(steps==0), steps = 1:15; end;
 if ~exist('params','var'), params = local_getparams(struct, steps, 'set'); end;
 if ~exist('notes_dir','var')||isempty(notes_dir), notes_dir = ''; end;
-if ~exist('verbose','var'), verbose = 'verboseON'; end;
+if ~any(strcmp(varargin,'verboseOFF')), verbose = 'verboseON'; end;
+if ~any(strcmp(varargin,'errorON')), err = 'errorOFF'; end;
 
 % get defaults from params based on steps
 params = local_getparams(params, steps, 'defaults'); % verbose
@@ -76,7 +77,8 @@ if ~isempty(notes_dir),
 end
 
 % display inputs
-dispi(mfilename,'\nsteps:\n',steps,'\nparams:\n',params,verbose);
+dispi(mfilename,'\nsteps:\n',steps,'\nsubj_dir:\n',subj_dir,'\nsubjID:\n',...
+    subjID,'\nparams:\n',params,'\nerror:\n',err,verbose);
 
 try
 % run each step
@@ -94,7 +96,7 @@ for x = steps
     cellfun(@(x)assignin('caller', x, local_fullfile(subj_dir, eval(x))), dir_fields);
     
     % check fields prior to step
-    local_stepchecks(fields, 'errorON', verbose);
+    local_stepchecks(fields, err, verbose);
     % check fields for current step
     local_stepchecks(newfields, verbose);
     
@@ -194,7 +196,7 @@ for x = steps,
     switch x,
         case 1 % nifti conversion
             fields = cat(2, fields, {'dcm_dir','dcm_expr','ni_dir'}); 
-            values = cat(2, values, {'Raw_DICOM', '*', 'nifti'});
+            values = cat(2, values, {'Raw_DICOM', '*/', 'nifti'});
         case 2 % nifti header repair
             fields = cat(2, fields, {'nifix_dir','nifix_expr'});
             values = cat(2, values, {'niftiFix','epi*.nii*'});
@@ -227,7 +229,7 @@ for x = steps,
             values = cat(2, values, {'Mesh'});
         case 12 % pRF model
             fields = cat(2, fields, {'epi_dir','prf_params'});
-            values = cat(2, values, {'nifti',[]});
+            values = cat(2, values, {'niftiFix',[]});
         case 13 % mesh visualization of pRF values
             fields = cat(2, fields, {});
             values = cat(2, values, {});
