@@ -1,50 +1,60 @@
-function install_segmentation(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
+function install_segmentation(mr_dir, seg_dir, ni_dir, verbose)
 % install_segmentation(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
-% mrVistaFolder - the mrVista session folder
-% segmentationFolder - the folder containing last t1_class edited files
-% niftiFolder - where this files should go in the mrVistaFolder 
-% To avoid errors, all paths should be fullfile
-% adapted for JAS in 2016
+% Installs volume anatomy and an existing cortical segmentation into an existing mrSESSION
+%
+% Inputs:
+% mr_dir - mrVista session folder
+% seg_dir - the folder containing last t1_class edited files
+% ni_dir - where this files should go in the mrVistaFolder 
+%
+% Outputs:
+% opens gray mrvista window (if installation fails, window will not open)
+%
+% Note: To avoid errors, all paths should be fullfile
+%
 % Adrien Chopin - 2015
 % Adapted from kb_installSeg.m
 % Kelly Byrne | Silver Lab | UC Berkeley | 2015-09-27 
 % modified from code written by the Winawer lab and available at: https://wikis.nyu.edu/display/winawerlab/Install+segmentation
 %
 % requires the VISTA Lab's Vistasoft package - available at: https://github.com/vistalab/vistasoft
-%
-% installs volume anatomy and an existing cortical segmentation into an existing mrSESSION
-%
-% required input: user-defined parameters
-% desired output: open gray window (if the installation fails, the window will not open)
-% ________________________________________________________________________________________________
 
-disp('Check that given mrVista session folder exists');
-check_folder(mrVistaFolder, 1, verbose);
-%cd(mrVistaFolder)
+% init vars
+if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
+if ~exist('seg_dir','var')||isempty(seg_dir), seg_dir = fullfile(pwd,'Segmentation'); end;
+if ~exist('ni_dir','var')||isemtpy(ni_dir), ni_dir = fullfile(pwd,'nifti'); end;
+initialDir = pwd;
 
+% check for mr_dir
+check_exist(mr_dir, 1, verbose);
+
+% run mrVista
+cd(mr_dir);
 mrVista;
 
 % user-defined parameters:
 query = []; %should trigger volume, gray or flat coords calculation if missing
 keepAllNodes = 1; %for more flexibility
-[tf, nbFiles] = check_files(segmentationFolder, '*t1_class*edited*', 1, 1, verbose);
-copy_files(segmentationFolder, '*t1_class*edited*', niftiFolder, verbose) %copy t1 class (edited) files
-segmfile = list_files(niftiFolder, '*t1_class*edited*', 1);
+check_exist(seg_dir, '*t1_class*edited*', 1, 'errorON', verbose);
+dispi('Copying ',fullfile(seg_dir,'*t1_class*edited*'),' to ',ni_dir,verbose);
+copyfile(fullfile(seg_dir, '*t1_class*edited*'), ni_dir);
+seg_file = get_dir(ni_dir, '*t1_class*edited*', 1);
 numGrayLayers = 3;
 
-disp('Please check the following user-defined parameters:')
+% display parameters
+dispi('Please check the following user-defined parameters:', verbose);
 dispi('query: ', query, verbose);
 dispi('keepAllNodes: ', keepAllNodes, verbose);
-dispi('classificationPath: ', segmfile, verbose);
+dispi('classificationPath: ', seg_file, verbose);
 dispi('numGrayLayers: ', numGrayLayers, verbose);
 
 % install segmentation
-vw = initHiddenInplane;
-disp('Installing Segmentation...')
-installSegmentation(query, keepAllNodes, segmfile, numGrayLayers)
+initHiddenInplane;
+dispi('Installing Segmentation...',verbose);
+installSegmentation(query, keepAllNodes, seg_file, numGrayLayers);
 
 % check segmentation
-vo = open3ViewWindow('gray');
-
-disp(' ----------------- INSTALLATION FINISHED -----------------------')
+open3ViewWindow('gray');
+cd(initialDir);
+end
 

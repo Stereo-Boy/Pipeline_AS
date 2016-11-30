@@ -5,7 +5,8 @@ function output = get_dir(fld, expr, n)
 % Inputs:
 % fld: string path to directory to search within (default is pwd)
 % expr: string expression to search within fld using dir (default is '')
-% n: number index of files/folders to return (default is [], all)
+% n: number index of files/folders to return (default is [], all). if n is
+% a single number, output will be a string rather than cellstr
 %
 % Outputs:
 % output: cell array of fullpath files/folders returned from call to dir 
@@ -16,13 +17,13 @@ function output = get_dir(fld, expr, n)
 % 
 % output = 
 % 
-%     '/Users/test.txt'
+% /Users/test.txt
 % 
 % output = get_dir(pwd, 'test*.txt', 2)
 % 
 % output = 
 % 
-%     '/Users/test2.txt'
+% /Users/test2.txt
 % 
 % output = get_dir(pwd, 'test*.txt', 1:2)
 %
@@ -50,3 +51,4 @@ output = fullfile(fld, {d.name});
 
 % output number of files/folders
 if ~isempty(n), output = output(n); end;
+if numel(n)==1, output = output{1}; end;

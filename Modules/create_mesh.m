@@ -1,25 +1,34 @@
-function create_mesh(meshFolder, nbOfIterations, verbose)
-% initially kb_macCreateMesh.m
-% required input: the Mesh folder inside mrVistaFolder, where the session is hosted
-%                 nbOfIterations being the number of smoothing iterations
-%                 for unfolding
-% desired output: lh_pial.mat, rh_pial.mat, lh_inflated.mat rh_inflated.mat
-% mrVistaFolder
+function create_mesh(mesh_dir, iter_n, verbose)
+% create_mesh(mesh_dir, iter_n, verbose)
+% Builds and saves a smoothed and inflated mesh for each hemispheres
+%
+% Inputs:
+% mesh_dir - string directory for mesh folder (default is pwd)
+% iter_n - number of iterations of smoothing iterations for unfolding
+% (default 600 iterations)
+% verbose - 'verboseOFF' to prevent displays (default is 'verboseON')
+%
+% Outputs:
+% files saved: lh_pial.mat, rh_pial.mat, lh_inflated.mat rh_inflated.mat
+% 
 % Kelly Byrne | Silver Lab | UC Berkeley | 2015-09-28
 % modified from code written by the VISTA lab and available at: http://web.stanford.edu/group/vista/cgi-bin/wiki/index.php/Mesh#Creating_a_mesh
-% modified again to work with JAS in nov 2016 (Adrien Chopin
-% builds and saves a smoothed and inflated mesh for each hemispheres
-% ____________________________________________________________________________________
+% modified for JAS pipeline nov 2016 (Adrien Chopin)
 
+% init vars
+if ~exist('mesh_dir','var')||isempty(mesh_dir), mesh_dir = pwd; end;
+if ~exist('iter_n','var')||isempty(iter_n), iter_n = 600; end;
+if ~exist('verbose','var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'; end
+
+% display function and inputs
+dispi(mfilename,'\nmesh_dir:\n',mesh_dir,'\niter_n:\n',iter_n,verbose);
 
 % open a connection to the mesh server
 % GUI will appear asking to allow incoming connections, this is OK - allow it!
 % to stop the GUI from appearing, add a signature to the mrMeshMac application and server executable
 % see the website below (specifically answers 2 & 3) for helpful information about this process 
 % http://apple.stackexchange.com/questions/3271/how-to-get-rid-of-firewall-accept-incoming-connections-dialog
-
-if ~exist('verbose','var'), verbose='verboseON'; end
-dispi('Opening connection to mrm server', verbose)
+dispi('Opening connection to mrm server', verbose);
 mrmStart(1,'localhost');
 
 % build and inflate left hemisphere mesh
@@ -27,47 +36,37 @@ mrmStart(1,'localhost');
 % confirmation that the appropriate class file was found. the third will ask you to save the pial surface for the
 % hemisphere you're working on, our naming convention is lh_pial for the left hemisphere (should be saved in mesh
 % directory): ignore it because we save it from command line afterthat. the fourth asks for smoothing parameters - default should be our value. 
+side = {'left','right'};
+hemi = {'lh','rh'};
+for x = 1:2,
+    % open each side's gray view 
+    dispi('Opening ', side{x}, ' hidden gray view', verbose);
+    vw = initHiddenGray;
+    dispi('Building ', side{x}, ' mesh', verbose);
+    vw = meshBuild(vw, side{x});  
+    MSH = meshVisualize(viewGet(vw, 'Mesh'));  
+    filename = fullfile(mesh_dir,[hemi{x},'_pial.mat']);
+    mrmWriteMeshFile(viewGet(vw, 'Mesh'), filename, 1);
 
-dispi('Opening left hidden gray view', verbose)
-vw=initHiddenGray;
-dispi('Still using GUI for mesh input parameters: PLEASE ACCEPT ALL DEFAULT - CANCEL GUIs for SAVING files', verbose)
-dispi('It is normal that we grow no gray layers for the analysis.', verbose)
-dispi('Building left mesh', verbose)
-vw = meshBuild(vw, 'left');  MSH = meshVisualize( viewGet(vw, 'Mesh') );  
-filename=fullfile(meshFolder,'lh_pial.mat');
-mrmWriteMeshFile(viewGet(vw, 'Mesh'), filename, 1) %last parameter is verbose
+    % inflate and smooth left mesh
+    dispi('Inflating/smoothing ',side{x},' mesh with ', iter_n, ' iterations ', verbose);
+    msh = viewGet(vw, 'Mesh');
+    msh = meshSet(msh,'smooth_iterations',iter_n);
+    vw = viewSet(vw, 'Mesh', meshSmooth(msh,0));
+    dispi('Coloring ',side{x},' mesh', verbose);
+    MSH = meshVisualize(viewGet(vw, 'Mesh'));
+    MSH = meshColor(MSH);
+    filename=fullfile(mesh_dir,[hemi{x},'_inflated.mat']);
+    dispi('Saving unfolded ', side{x}, ' mesh', verbose);
+    mrmWriteMeshFile(MSH, filename, 1);
+end
 
-dispi('Inflating/smoothing left mesh with ', nbOfIterations, ' iterations ', verbose)
-msh = viewGet(vw, 'Mesh');
-msh = meshSet(msh,'smooth_iterations',nbOfIterations);
-vw = viewSet( vw, 'Mesh', meshSmooth(msh,0) );
-dispi('Coloring left mesh', verbose)
-MSH = meshVisualize( viewGet(vw, 'Mesh') );
-MSH = meshColor(MSH);
-filename=fullfile(meshFolder,'lh_inflated.mat');
-dispi('Saving unfolded left mesh', verbose)
-mrmWriteMeshFile(MSH, filename, 1) %last parameter is verbose
-
-% All same for right hemishphere
-dispi('Opening right hidden gray view', verbose)
-vw2=initHiddenGray;
-dispi('Building right mesh', verbose)
-vw2 = meshBuild(vw2, 'right');  MSH2 = meshVisualize( viewGet(vw2, 'Mesh') );  
-filename2=fullfile(meshFolder,'rh_pial.mat');
-mrmWriteMeshFile(viewGet(vw2, 'Mesh'), filename2, 1) %last parameter is verbose
-
-dispi('Inflating/smoothing right mesh with ', nbOfIterations, ' iterations ', verbose)
-msh2 = viewGet(vw2, 'Mesh');
-msh2 = meshSet(msh2,'smooth_iterations',nbOfIterations);
-vw2 = viewSet( vw2, 'Mesh', meshSmooth(msh2,0) );
-dispi('Coloring right mesh', verbose)
-MSH2 = meshVisualize( viewGet(vw2, 'Mesh') );
-MSH2 = meshColor(MSH2);
-dispi('Visualizing right mesh', verbose)
-filename2=fullfile(meshFolder, 'rh_inflated.mat');
-dispi('Saving unfolded right mesh', verbose)
-mrmWriteMeshFile(MSH2, filename2, 1) %last parameter is verbose
-
-close all;
 % close windows and connection to the mesh server
-close_mesh_server(verbose)
+dispi('Closing all windows and connections to the mesh server',verbose);
+close all;
+mrmCloseWindow(1001,'localhost');
+mrmCloseWindow(1003,'localhost');
+mrmCloseWindow(1005,'localhost');
+mrmCloseWindow(1007,'localhost');
+system('osascript -e quit app "mrMeshMac.app"');
+end

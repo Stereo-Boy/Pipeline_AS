@@ -90,7 +90,7 @@ end
 dispi(params, verbose);
 
 % initialize the session
-initialDir=pwd;
+initialDir = pwd;
 cd(mr_dir);
 mrInit(params);
 
