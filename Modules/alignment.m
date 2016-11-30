@@ -1,21 +1,27 @@
 function xform = alignment(sessionDir, vol, ref, ipath, steps, verbose)
-% xform = alignment(sessionDir, vol, ref, ipath, steps)
+% xform = alignment(sessionDir, vol, ref, ipath, steps, verbose)
 %
 % Automated alignment:
 % 1. run fsl brain extraction
 % 2. run mrvista coarse alignment
 % 3. run mrvista fine alignment 
 % 4. run mrvista Nestares fine alignment
+% 5. save alignment matrix to mrSESSION.mat in sessionDir
 %
 % Inputs:
 % sessionDir : string full path to mrvista session directory (default is pwd)
 % vol : string full path to volume file (e.g. MV40_nu_RAS_NoRS.nii.gz file)
 % ref : string full path to reference file (e.g. gems.nii.gz file)
 % ipath : string full path to folder containing .dcm files for ref file
-% steps : [optional] numeric array corresponding to the above steps to be run [default=1:4]
+% steps : [optional] numeric array corresponding to the above steps to be run [default=1:5]
+% verbose : [optional] 'verboseOFF' to prevent display to command window [default = 'verboseON']
 %
 % Outputs:
 % xform : realignment transformation matrix (also saved to mrSESSION.mat file)
+%
+% Note: if concatenating previous matrix, the alignment will not look
+% correct when viewed with rxAlign in mrVista (since the resulting matrix
+% is truly the alignment for e.g. functional data instead).
 %
 % Created by Justin Theiss 10/16
 %(adapted from mrvista rxFineMutualInf and rxFineNestares)
@@ -30,7 +36,8 @@ if ~exist('ref','var')||isempty(ref),
     [f,p] = uigetfile('*.nii.gz','Choose reference:');
     ref = fullfile(p,f);
 end;
-if ~exist('steps','var')||isempty(steps), steps = 1:4; end;
+if ~exist('mat','var')||isempty(mat), mat = []; end;
+if ~exist('steps','var')||isempty(steps), steps = 1:5; end;
 if ~exist('verbose','var')||isempty(verbose), verbose = 'verboseON'; end;
 if ~any(steps==2),
   ipath = [];
@@ -42,7 +49,7 @@ xform = [];
 
 % display inputs
 dispi(mfilename,'\nsessionDir: ',sessionDir,'\nvol: ',vol,'\nref: ',ref,...
-    '\nipath: ',ipath,'\nsteps: ',steps,'\n',verbose);
+    '\nipath: ',ipath,'\nmat:\n',mat,'\nsteps: ',steps,'\n',verbose);
 
 %% 1. run fsl brain extraction
 if any(steps==1),
@@ -176,11 +183,14 @@ if any(steps==4),
 end;
 
 % save to mrSESSION.mat
-if exist(fullfile(sessionDir,'mrSESSION.mat'), 'file'),
-    load(fullfile(sessionDir, 'mrSESSION.mat'), 'mrSESSION');
-    mrSESSION.alignment = xform;
-    save(fullfile(sessionDir, 'mrSESSION.mat'), 'mrSESSION', '-append');
-    dispi('Xform was saved to ', fullfile(sessionDir,'mrSESSION.mat'), verbose)
-else
-    warni('Alignment step failed because there is no correct mrSESSION path provided', verbose)
-end;
+if any(steps==5),
+    dispi('Step: ',5,verbose);
+    if exist(fullfile(sessionDir,'mrSESSION.mat'), 'file'),
+        load(fullfile(sessionDir, 'mrSESSION.mat'), 'mrSESSION');
+        mrSESSION.alignment = xform;
+        save(fullfile(sessionDir, 'mrSESSION.mat'), 'mrSESSION', '-append');
+        dispi('Xform was saved to ', fullfile(sessionDir,'mrSESSION.mat'), verbose)
+    else % if no mrSESSION.mat file
+        warning_error('mrSESSION.alignment not saved', verbose)
+    end
+end

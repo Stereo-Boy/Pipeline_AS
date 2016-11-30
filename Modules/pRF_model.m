@@ -1,13 +1,15 @@
-function pRF_model(mr_dir, epi_dir, params, overwrite, verbose)
-% pRF_model(mr_dir, epi_dir, n_dum, params, overwrite)
+function pRF_model(mr_dir, epi_dir, expr, params, overwrite, verbose)
+% pRF_model(mr_dir, epi_dir, params, overwrite, verbose)
 %
 % Inputs:
-% mr_dir: string directory containing mrSESSION.mat file
-% epi_dir: string directory containing epi*.nii* files (default epi*.nii*
-% files in mr_dir/nifti)
+% mr_dir: string directory containing mrSESSION.mat file (default is pwd)
+% epi_dir: string directory containing files (default is mr_dir/'nifti')
+% expr: string expression of files within epi_dir (default 'epi*.nii*')
 % params: structure of parameters for pRF model (default: see below)
-% overwrite: boolean true/false to overwrite any previous work
-% 
+% overwrite: boolean true/false to overwrite any previous work (default
+% is false)
+% verbose: 'verboseOFF' to prevent displays (default is 'verboseON')
+%
 % Outputs saved:
 % retModel*Fit.mat files that contain results from pRF model
 %
@@ -38,16 +40,10 @@ function pRF_model(mr_dir, epi_dir, params, overwrite, verbose)
 
 % init defaults
 curdir = pwd; 
-if ~exist('verbose','var'), verbose='verboseON'; end
-if ~exist('mr_dir','var')||~exist(mr_dir,'dir'),
-    mr_dir = pwd;
-end
-if ~exist('epi_dir','var')||~exist(epi_dir,'dir'),
-    epi_dir = fullfile(mr_dir,'nifti');
-end
-if ~exist('n_dum','var')||isempty(n_dum),
-    n_dum = 5;
-end
+if ~exist('verbose','var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'; end
+if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
+if ~exist('epi_dir','var')||isempty(epi_dir), epi_dir = fullfile(mr_dir,'nifti'); end;
+if ~exist('expr','var')||isempty(expr), expr = 'epi*.nii*'; end;
 if ~exist('params','var')||~isstruct(params),
     dispi('No parameters detected for pRF_model (should be in separate parameter files): loading default', verbose)
     params.analysis = struct('fieldSize',9.1,...
@@ -76,16 +72,19 @@ if ~exist('overwrite','var')||isempty(overwrite),
     overwrite = false;
 end
 
+% print function and inputs
+dispi(mfilename,'\nmr_dir:\n',mr_dir,'\nepi_dir:\n',epi_dir,'\nparams:\n',params,...
+    '\noverwrite:\n',overwrite,verbose);
+
 % get epis in epi_dir
-d = dir(fullfile(epi_dir,'epi*.nii*'));
+d = dir(fullfile(epi_dir,expr));
 files = fullfile(epi_dir,{d.name});
 
 % load session data
-cd(mr_dir); %necessary when using initHiddenInplane function!
-%mrGlobals
+cd(mr_dir);
+mrGlobals
 vw = initHiddenInplane;
 vol = initHiddenGray;
-%loadSession
 
 % check if Inplane/Averages exists
 if exist(fullfile(mr_dir,'Inplane','Averages'),'dir') && ~overwrite,
