@@ -13,6 +13,7 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 %
 % Outputs: 
 % params - structure containing fields used as variables in the pipeline
+% params.output{step} will contain any outputs from each step run
 %
 % Steps available to run:
 %   0.  All of the below steps
@@ -48,8 +49,13 @@ if nargin==0,
     cellfun(@(x,y)dispi('    ', x, ': ', y), fields, values);
     return; 
 end;
+% if steps==0, set to all
 if ~exist('steps','var')||all(steps==0), steps = 1:15; end;
-if ~exist('params','var'), params = local_getparams(struct, steps, 'set'); end;
+if ~exist('params','var')||isempty(params), % set params if none
+    params = local_getparams(struct, steps, 'set'); 
+elseif ischar(params), % load params if char
+    load(params);
+end; % set notes_dir, verbose, err
 if ~exist('notes_dir','var')||isempty(notes_dir), notes_dir = ''; end;
 if ~any(strcmp(varargin,'verboseOFF')), verbose = 'verboseON'; end;
 if ~any(strcmp(varargin,'errorON')), err = 'errorOFF'; end;
@@ -61,6 +67,11 @@ params = local_getparams(params, steps, 'defaults');
 fields = fieldnames(params);
 values = struct2cell(params);
 cellfun(@(x,y)assignin('caller', x, y), fields(:), values(:));
+
+% set outputs in params
+if ~isfield(params,'outputs'), params.outputs = cell(max(steps),1); end;
+if ~iscell(params.outputs), params.outputs = {params.outputs}; end;
+params.outputs(steps) = {[]};
 
 % init subj_dir, subjID
 if ~exist('subj_dir','var')||isempty(subj_dir), subj_dir = pwd; end;
@@ -115,7 +126,7 @@ for x = steps
             copyfile(fullfile(ni_dir,nifix_expr),nifix_dir);
             fixHeader(nifix_dir,nifix_expr,'freq_dim',1,'phase_dim',2,'slice_dim',3);
         case 3 % segmentation using freesurfer
-            segmentation(subjID,nifix_dir,seg_dir,verbose);
+            segmentation(subjID,ni_dir,seg_dir,verbose);
         case 4 % correction of gray mesh irregularities
             %%%%%
         case 5 % removal of ''pRF dummy'' frames
@@ -133,8 +144,8 @@ for x = steps
             motion_correction(mc_dir,nifix_expr,{'reffile',gems,1},...
                 '-plots','-report','-cost mutualinfo','-smooth 16',verbose);
         case 7 % motion outliers
-            bad_trs = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
-            dispi('Outliers:\n', bad_trs, verbose);
+            params.outputs{x} = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
+            dispi('Outliers:\n', params.outputs{x}, verbose);
         case 8 % initialization of mrVista session
             % get gems, mprage
             gems = get_dir(nifix_dir,gems_expr,1);
@@ -214,7 +225,7 @@ for x = steps,
             values = cat(2, values, {5});
         case 6 % motion correction
             fields = cat(2, fields, {'mc_dir','mc_expr','ref_dir','ref_expr'});
-            values = cat(2, values, {'MoCo','*_mcf.nii*','nifti','gems_ret*.nii*'});
+            values = cat(2, values, {'MoCo','*_mcf.nii*','nifti','gems*.nii*'});
         case 7 % motion outliers
             fields = cat(2, fields, {});
             values = cat(2, values, {});
@@ -301,6 +312,8 @@ if any(strncmp(varargin,'error',5)),
 else % default off
     err = 'errorOFF';
 end
+% display fields being checked
+dispi('Checking fields:\n',fields(:),verbose);
 % for each field, eval for value
 values = cell(size(fields));
 for x = 1:numel(fields),

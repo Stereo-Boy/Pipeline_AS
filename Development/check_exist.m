@@ -99,7 +99,7 @@ d = dir(fullfile(fld,expr));
 if any(strfind(fld,'*'))||(~isempty(expr)&&strcmp(expr(end),filesep)),
     d = d([d.isdir]);
     ftype = 'folders';
-elseif ~isempty(fld) && ~isempty(expr), % files
+elseif ~isempty(fld) && ~isempty(ck), % files/folders
     d = d(~[d.isdir]);
     ftype = 'files';
 else % check isdir(fld)

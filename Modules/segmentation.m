@@ -15,9 +15,16 @@ function segmentation(subjID, mprage_dir, seg_dir, verbose)
 
 % init vars
 if ~exist('verbose', 'var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'; end;
-if ~exist('subjectID','var'), warning_error('segmentation: subjectID not defined', 'errorON'); end;
+if ~exist('subjID','var'), warning_error('segmentation: subjID not defined', 'errorON'); end;
 if ~exist('mprage_dir','var')||isempty(mprage_dir), mprage_dir = pwd; end;
 if ~exist('seg_dir','var')||isempty(seg_dir), seg_dir = fullfile(mprage_dir,'Segmentation'); end;
+
+% check FREESURFER_HOME variable exists
+if isempty(getenv('FREESURFER_HOME')),
+    fs_dir = uigetdir(pwd,'Choose Freesurfer folder:');
+    if ~any(fs_dir), warning_error('No FREESURFER_HOME variable set','errorON'); end;
+    setenv('FREESURFER_HOME',fs_dir);
+end
 
 % check SUBJECTS_DIR variable exists
 if isempty(getenv('SUBJECTS_DIR')),

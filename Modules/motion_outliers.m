@@ -55,7 +55,9 @@ for x = 1:numel(confiles),
     % set first column to files
     tabl{x,1} = files{x};
     % check confile exists, if not skip
-    if ~check_exist(confiles{x},1,verbose), continue; end;
+    if ~check_exist(fileparts(confiles{x}),convars{x},1,verbose), 
+        continue; 
+    end;
     % load confile
     load(confiles{x});
     % set number of outliers
