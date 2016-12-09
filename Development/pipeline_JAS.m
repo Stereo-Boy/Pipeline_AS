@@ -283,30 +283,35 @@ try
 %                   %ref volume which should be the newly created ref_vol.nii.gz
 %                 motion_correction(retinoMCfolder, '*gems*.nii.gz', 'reffile',fullfile(retinoMCfolder,'ref_vol.nii.gz'),1) %motion correct the gems second, using the same 
                 
-                reference = 2;
+                reference = 3;
                 % reference values:
                 % 1. gems downsampled at epi resolution
                 % 2. gems at original resolution - epi will be upsampled to gems resolution 
-                
+                % 3. first epi, first TR - gems is uncorrected
                 switch reference
                     case {1}
                         dispi('We want mcFLIRT to motion correct the epis to the downsampled resolution GEMS') 
                         dispi('In that version, the EPIs will not be resampled at high resolution')
                         epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
                         gems = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
-                        gemsFileRef=fullfile(retinoMCfolder,'gemsRef90.nii.gz');
-                        fslresample(gems,gemsFileRef, '-ref', epis{1}, verbose)
+                        refFile=fullfile(retinoMCfolder,'gemsRef90.nii.gz');
+                        fslresample(gems,refFile, '-ref', epis{1}, verbose)
                     case {2} % 2. gems at original resolution - epi will be upsampled to gems resolution 
                         dispi('We want mcFLIRT to motion correct the epis to the higher resolution GEMS') 
                         dispi('In that version, we will align the EPIs to the high resolution GEMS, which means EPIS will be resampled at high resolution')
-                        gemsFileRef = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
-                        gemsFileRef=gemsFileRef{1};
+                        listGEMS = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
+                        refFile=listGEMS{1};
+                   case {3} % 3. first epi, first TR - gems is uncorrected
+                        dispi('We want mcFLIRT to motion correct the epis to the first TR of the first epi') 
+                        dispi('In that version, GEMS remains unaligned')
+                        epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
+                        refFile= epis{1};
                 end
                                         
 
                 %motion correct the epi to the higher resolution gems (as a ref file)
-                dispi('Motion-correcting all epis to the gems reference file: ', gemsFileRef, verbose);
-                motion_correction(retinoMCfolder, '*epi*.nii.gz', {'reffile', gemsFileRef, 1}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
+                dispi('Motion-correcting all epis to the following reference file: ', refFile, verbose);
+                motion_correction(retinoMCfolder, '*epi*.nii.gz', {'reffile', refFile, 1}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
 
                 dispi('Check that we have all our MC files in MC folder', verbose)
                 check_files(retinoMCfolder,'*_mcf.nii.gz', nbFiles-1, 1, verbose); %should be nb of epi -1 bc we do not correct our gems
@@ -414,7 +419,7 @@ try
          case {13}  %  13. retino epi: pRF model
              dispi(' --------------------  ',step, '. retino/epi: pRF model ------------------------------', verbose) 
              check_folder(retinoMrSessionFolder, 1, verbose);
-             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, param, 1)
+             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*epi*.nii*', param, 1, verbose)
              dispi('Check success of pRF model', verbose)
              check_files(fullfile(retinoMrSessionFolder,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists
              dispi(' --------------------------  retino/epi: end of pRF model ----------------------------------------', verbose)

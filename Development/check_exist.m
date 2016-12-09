@@ -96,7 +96,7 @@ if ~exist('ck','var'), ck = ''; end;
 d = dir(fullfile(fld,expr));
 
 % if expr ends with file sep or fld contains *, directories
-if strcmp(expr(end),filesep)||any(strfind(fld,'*')),
+if (~isempty(expr)&&strcmp(expr(end),filesep))||any(strfind(fld,'*')),
     d = d([d.isdir]);
     ftype = 'folders';
 elseif ~isempty(fld) && ~isempty(expr), % files

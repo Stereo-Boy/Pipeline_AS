@@ -79,6 +79,8 @@ dispi(mfilename,'\nmr_dir:\n',mr_dir,'\nepi_dir:\n',epi_dir,'\nparams:\n',params
 % get epis in epi_dir
 d = dir(fullfile(epi_dir,expr));
 files = fullfile(epi_dir,{d.name});
+dispi('We will run the model with the following EPI files: ', verbose)
+dispi(files,verbose)
 
 % load session data
 cd(mr_dir);
