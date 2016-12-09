@@ -18,6 +18,8 @@ if ~exist('verbose', 'var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON
 if ~exist('subjID','var'), warning_error('segmentation: subjID not defined', 'errorON'); end;
 if ~exist('mprage_dir','var')||isempty(mprage_dir), mprage_dir = pwd; end;
 if ~exist('seg_dir','var')||isempty(seg_dir), seg_dir = fullfile(mprage_dir,'Segmentation'); end;
+initialDir = pwd;
+cd(seg_dir);
 
 % check FREESURFER_HOME variable exists
 if isempty(getenv('FREESURFER_HOME')),
@@ -53,31 +55,26 @@ loop_system('recon-all','-i',mprage_file,'-subjid',subjID,'-all',verbose);
 check_exist(fullfile(fs_subjdir,'mri'), 'ribbon.mgz', 1, verbose, 'errorON');
 
 % MGZ TO NII CONVERSION
-if ~check_exist(fullfile(fs_subjdir,'mri'),[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose),
+if ~check_exist(seg_dir,[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose),
     dispi(repmat('-',1,10),'Starting conversion of mgz files to nifti',repmat('-',1,10),verbose);
     % convert mgz file to nifti
     loop_system('mgz2niiOrNoRS.sh',subjID,'RAS');
 end
 
-% SET UP FILES FOR ITKGRAY 
-check_exist(fullfile(fs_subjdir,'mri'),[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose,'errorON');
+% SET UP FOR ITKGRAY (converts freesurfer segmentation values to ITK values)
+check_exist(seg_dir,[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose,'errorON');
 dispi('Setting up files for itkGray', verbose);
 dispi('Starting fs_ribbon2itk to convert nifti file to itkGray class file', verbose);
 % check for t1_class file, otherwise run fs_ribbon2itk
-if ~check_exist(fullfile(fs_subjdir,'mri'),'t1_class.nii.gz',1,verbose)
+if ~check_exist(seg_dir,'t1_class.nii.gz',1,verbose)
     % run fs_ribbon2itk
     fs_ribbon2itk(subjID);
+    % copy file to seg_dir
+    disi('Copying t1_class.nii.gz to ', seg_dir, verbose);
+    copyfile(fullfile(fs_dir,subjID,'mri','t1_class.nii.gz'), seg_dir);
 end % check again for t1_class file
-check_exist(fullfile(fs_subjdir,'mri'),'t1_class.nii.gz',1,verbose,'errorON');
+check_exist(seg_dir,'t1_class.nii.gz',1,verbose,'errorON');
 
-% COPY FILES TO seg_dir
-dispi(repmat('-',1,10),'Cleaning - Copying files back to your segmentation folder',repmat('-',1,10),verbose);
-dispi('Copying ', [subjID '_nu_RAS_NoRS.nii.gz file...'], verbose);
-copyfile(fullfile(fs_subjdir,'mri',[subjID,'_nu_RAS_NoRS.nii.gz']), seg_dir);
-dispi('Copying t1_class.nii.gz file...', verbose);
-copyfile(fullfile(fs_subjdir,'mri','t1_class.nii.gz'),seg_dir);
-
-% check that itkGray files were actually put in the correct place
-check_exist(seg_dir, 't1_class.nii.gz', 1, verbose, 'errorON');
-check_exist(seg_dir, [subjID '_nu_RAS_NoRS.nii.gz'], 1, verbose, 'errorON');
+% return to initialDir
+cd(initialDir);
 end

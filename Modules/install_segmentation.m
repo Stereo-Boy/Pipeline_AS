@@ -22,7 +22,7 @@ function install_segmentation(mr_dir, seg_dir, ni_dir, verbose)
 % init vars
 if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
 if ~exist('seg_dir','var')||isempty(seg_dir), seg_dir = fullfile(pwd,'Segmentation'); end;
-if ~exist('ni_dir','var')||isemtpy(ni_dir), ni_dir = fullfile(pwd,'nifti'); end;
+if ~exist('ni_dir','var')||isempty(ni_dir), ni_dir = fullfile(pwd,'nifti'); end;
 initialDir = pwd;
 
 % check for mr_dir

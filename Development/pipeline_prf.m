@@ -148,22 +148,24 @@ for x = steps
             dispi('Outliers:\n', params.outputs{x}, verbose);
         case 8 % initialization of mrVista session
             % get gems, mprage
-            gems = get_dir(nifix_dir,gems_expr,1);
-            mprage = get_dir(seg_dir,mprage_expr,1);
+            gems = get_dir(ni_dir,ref_expr,1);
+            mprage = get_dir(seg_dir,vol_expr,1);
             % init session
             close all;
             init_session(mr_dir,ni_dir,'inplane',gems,'functionals',epi_expr,...
                 'vAnatomy',mprage,'sessionDir',mr_dir,'subject', subjID);
         case 9 % alignment of inplane and volume
             % get gems, mprage, ipath
-            vol = get_dir(nifix_dir,vol_expr,1);
-            ref = get_dir(seg_dir,ref_expr,1);
-            ipath = get_dir(dcm_dir,vol,1);
+            ref = get_dir(ni_dir,ref_expr,1);
+            vol = get_dir(seg_dir,vol_expr,1);
+            ipath = get_dir(dcm_dir,i_expr,1);
             % run alignment
-            xform = alignment(mr_dir,vol,ref,ipath);
+            xform = alignment(mr_dir,vol,ref,ipath,align_n);
             dispi('Resulting xform matrix:\n',xform,verbose);
             % extract performance
-            extractAlignmentPerfStats(mr_dir,ref_slc_n,verbose);
+            [avgcorr, sumrmse] = extractAlignmentPerfStats(mr_dir,ref_slc_n,verbose);
+            params.outputs{x} = {avgcorr, sumrmse};
+            close('all');
         case 10 % segmentation installation
             initialPath = pwd; cd(mr_dir);
             install_segmentation(mr_dir,seg_dir,ni_dir,verbose);
@@ -184,7 +186,7 @@ end
 catch err % if error, return
     dispi(err.message, verbose);
     record_notes('off');
-    rethrow(err);
+    return; %rethrow(err);
 end
 
 % display done
@@ -230,11 +232,11 @@ for x = steps,
             fields = cat(2, fields, {});
             values = cat(2, values, {});
         case 8 % initialization of mrVista session
-            fields = cat(2, fields, {'mr_dir'});
-            values = cat(2, values, {'mrVista_Session'});
+            fields = cat(2, fields, {'mr_dir','vol_expr'});
+            values = cat(2, values, {'mrVista_Session','*nu_RAS*.nii*'});
         case 9 % alignment of inplane and volume
-            fields = cat(2, fields, {'vol_dir','vol_expr','ref_slc_n'});
-            values = cat(2, values, {'Segmentation','*mprage*.nii*',24});
+            fields = cat(2, fields, {'vol_dir','i_expr','ref_slc_n','align_n'});
+            values = cat(2, values, {'Segmentation','gems*',24,1:5});
         case 10 % segmentation installation
             fields = cat(2, fields, {});
             values = cat(2, values, {});
