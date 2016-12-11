@@ -66,16 +66,8 @@ end
 function str = local_disp(var)
 % use disp function to get string of var
 
-% if struct, get fields/values
-if isstruct(var), 
-    fields = fieldnames(var);
-    values = struct2cell(var);
-    % get print each field: value to avoid truncation from disp(struct)
-    str = cellfun(@(x,y){[x, ': ', local_disp(y)]}, fields, values);
-    str = sprintf('%s\n', str{:});
-else % get string using disp
-    str = evalc('disp(var)');
-end
+% get string using disp
+str = evalc('disp(var)');
 % if not char, remove beginning spaces (e.g., cell arrays)
 if ~ischar(var), str = regexprep(str,{'^\s+','\n\s+'},{'','\n'}); end;
 % remove end returns

@@ -64,8 +64,7 @@ if any(steps==1),
     ref_b = fullfile(p,[f '_brain' e2 e]);
 
     % run fsl brain extraction
-    system(['bet "' vol '" "' vol_b '" -R;'...
-        'bet "' ref '" "' ref_b '" -R;']);
+    loop_system('bet',{vol;ref},{vol_b;ref_b},{'-B';'-R'},verbose);
 
     % get vol_data as rxAlign does
     [vol_data, volVoxelSize] = readVolAnat(vol_b);
@@ -98,8 +97,8 @@ if any(steps==2),
     xformToScanner(1:3,4) = xformToScanner([1:3],4) + [10 -20 -20]';
 
     % set ref mat
-    VG.mat = xformToScanner;
-
+    VG.mat = xformToScanner; 
+    
     % set volume mat
     hsz = size(vol_data) ./ 2;
     res = volVoxelSize;
@@ -110,16 +109,21 @@ if any(steps==2),
 
     % set flag
     flags.sep = [8 4 2];
+    
+    ipAnat = mrAnatHistogramClip(ref_data, 0.2, 0.99);
+    VG.uint8 = uint8(ipAnat * 255 + 0.5);
 
     % get rot/trans from spm_coreg
     rotTrans = spm_coreg(VG, VF, flags);
-
+    
     % build alignment matrix
     xform = VF.mat \ spm_matrix(rotTrans) * VG.mat;
-
-    % apply axial flip
+        
+    % shift for mrvista
     shift = [eye(3) -size(ref_data)'./2; 0 0 0 1];
     xform = shift * xform / shift;
+    
+    % apply axial flip
     [trans, rot] = affineDecompose(xform);
     scale = [-1,1,1] .* refVoxelSize ./ volVoxelSize;
     xform = affineBuild(trans,rot,scale,[0,0,0]);
@@ -131,7 +135,7 @@ if any(steps==3),
     % display step
     dispi('Step: ',3,verbose);
     % set tolerances for rotations and translations
-    flags.tol = [0.005 0.005 0.005 0.001 0.001 0.001];
+    flags.sep = [4,2];
     % set params in flags to account for coarse alignment
     revAlignment = spm_imatrix(VF.mat * xform / VG.mat);
     flags.params = revAlignment(1:6);
