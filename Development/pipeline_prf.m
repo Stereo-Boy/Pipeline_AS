@@ -172,7 +172,7 @@ for x = steps
             cd(initialPath);
         case 11 % mesh creation
             initialPath = pwd; cd(mr_dir);
-            create_mesh(mesh_dir,600,verbose);
+            create_mesh(mesh_dir,600,4,verbose);
             cd(initialPath);
         case 12 % pRF model
             pRF_model(mr_dir,epi_dir,epi_expr,prf_params,true,verbose);
