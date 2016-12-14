@@ -170,7 +170,7 @@ if any(steps==4),
     if ~isa(ref_data, 'double'), ref_data = double(ref_data); end;
 
     % run registration
-    [rot, trans] = regVolInp(vol_data, ref_data, scaleFac, rot, trans, coarseIterations, gradFunction, pbyp);
+    [rot, trans] = regVolInp(vol_data, ref_data, scaleFac, rot, trans, coarseIterations, gradFunction, pbyp, 20);
 
     % convert into a 4x4 affine xform matrix
     A = diag(scaleFac(2,:)) * rot * diag(1./scaleFac(1,:));

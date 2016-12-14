@@ -29,8 +29,8 @@ function warning_error(varargin)
 if nargin==0, return; end;
 
 % get warning state and set to on
-S = warning;
-warning('on');
+S = warning; back_state = warning('query','backtrace');
+warning('on'); warning('backtrace','off');
 
 % check for 'errorON'
 if ~any(strcmpi(varargin,'errorON')), % errorOFF (default)
@@ -57,13 +57,23 @@ end
 
 % error
 if strcmp(err,'errorON'),
-    error(sprintf(string));
+    % create MException to be thrown as if from caller
+    ME = MException('',sprintf(string));
+    throwAsCaller(ME);
 % warning
-elseif strcmp(verbose,'verboseON'),
-    warning(sprintf(string));
+elseif strcmp(verbose,'verboseON')
+    % get db stack omitting this function
+    stack = dbstack(1); disp({stack.name})
+    % interleave names and lines
+    name_line = cell(1,numel(stack)*2);
+    name_line(1:2:end) = {stack.name};
+    name_line(2:2:end) = {stack.line};
+    % warning
+    backstr = sprintf('In %s at %d\n', name_line{:});
+    warning([sprintf([string,'\n\n']),backstr]);
 end
 
 % reset warning state
-warning(S);
+warning(S); warning(back_state);
 return;
     

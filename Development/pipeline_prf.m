@@ -152,8 +152,8 @@ for x = steps
             mprage = get_dir(seg_dir,vol_expr,1);
             % init session
             close all;
-            init_session(mr_dir,ni_dir,'inplane',gems,'functionals',epi_expr,...
-                'vAnatomy',mprage,'sessionDir',mr_dir,'subject', subjID);
+            init_session(mr_dir,mc_dir,'inplane',gems,'functionals',epi_expr,...
+                'vAnatomy',mprage,'sessionDir',mr_dir,'subject',subjID);
         case 9 % alignment of inplane and volume
             % get gems, mprage, ipath
             ref = get_dir(ni_dir,ref_expr,1);
@@ -167,13 +167,10 @@ for x = steps
             params.outputs{x} = {avgcorr, sumrmse};
             close('all');
         case 10 % segmentation installation
-            initialPath = pwd; cd(mr_dir);
             install_segmentation(mr_dir,seg_dir,ni_dir,verbose);
-            cd(initialPath);
         case 11 % mesh creation
-            initialPath = pwd; cd(mr_dir);
-            create_mesh(mesh_dir,600,4,verbose);
-            cd(initialPath);
+            t1_file = get_dir(seg_dir,t1_expr,1);
+            create_mesh(mr_dir,mesh_dir,t1_file,iter_n,gray_n,verbose);
         case 12 % pRF model
             pRF_model(mr_dir,epi_dir,epi_expr,prf_params,true,verbose);
         case 13 % mesh visualization of pRF values
@@ -184,9 +181,9 @@ for x = steps
     end
 end
 catch err % if error, return
-    dispi(err.message, verbose);
+    getReport(err, 'extended', 'hyperlinks', 'off');
     record_notes('off');
-    return; %rethrow(err);
+    return;
 end
 
 % display done
@@ -241,8 +238,8 @@ for x = steps,
             fields = cat(2, fields, {});
             values = cat(2, values, {});
         case 11 % mesh creation
-            fields = cat(2, fields, {'mesh_dir'});
-            values = cat(2, values, {'Mesh'});
+            fields = cat(2, fields, {'mesh_dir','t1_expr','iter_n','gray_n'});
+            values = cat(2, values, {'Mesh','*t1_class_edited*.nii*',600,4});
         case 12 % pRF model
             fields = cat(2, fields, {'epi_dir','epi_expr','prf_params'});
             values = cat(2, values, {'MoCo','epi*_mcf.nii*',[]});

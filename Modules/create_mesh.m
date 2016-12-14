@@ -1,12 +1,15 @@
-function create_mesh(mesh_dir, iter_n, gray_n, verbose)
+function create_mesh(mr_dir, mesh_dir, t1_file, iter_n, gray_n, verbose)
 % create_mesh(mesh_dir, iter_n, verbose)
 % Builds and saves a smoothed and inflated mesh for each hemispheres
 %
 % Inputs:
-% mesh_dir - string directory for mesh folder (default is pwd)
+% mr_dir - string directory for mrVista session folder (default is pwd)
+% mesh_dir - string directory for mesh folder (default is fullfile(pwd,'Mesh'))
+% t1_file - string filepath for t1_class_edited.nii.gz file (default is
+% fullfile(pwd,'t1_class_edited.nii.gz'))
 % iter_n - number of iterations of smoothing iterations for unfolding
 % (default 600 iterations)
-% gray_n - number of gray layers
+% gray_n - number of gray layers (default is 4)
 % verbose - 'verboseOFF' to prevent displays (default is 'verboseON')
 %
 % Outputs:
@@ -17,12 +20,20 @@ function create_mesh(mesh_dir, iter_n, gray_n, verbose)
 % modified for JAS pipeline nov 2016 (Adrien Chopin)
 
 % init vars
-if ~exist('mesh_dir','var')||isempty(mesh_dir), mesh_dir = pwd; end;
+if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
+if ~exist('mesh_dir','var')||isempty(mesh_dir), mesh_dir = fullfile(pwd,'Mesh'); end;
+if ~exist('t1_file','var')||isempty(t1_file), t1_file = fullfile(pwd,'t1_class_edited.nii.gz'); end;
 if ~exist('iter_n','var')||isempty(iter_n), iter_n = 600; end;
+if ~exist('gray_n','var')||isempty(gray_n), gray_n = 4; end;
 if ~exist('verbose','var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'; end
 
+% cd to mr_dir
+initialDir = pwd;
+cd(mr_dir);
+
 % display function and inputs
-dispi(mfilename,'\nmesh_dir:\n',mesh_dir,'\niter_n:\n',iter_n,'\ngray_n:\n',gray_n,verbose);
+dispi(mfilename,'\nmesh_dir:\n',mesh_dir,'\nt1_file:\n',t1_file,...
+    '\niter_n:\n',iter_n,'\ngray_n:\n',gray_n,verbose);
 
 % open a connection to the mesh server
 % GUI will appear asking to allow incoming connections, this is OK - allow it!
@@ -40,8 +51,13 @@ mrmStart(1,'localhost');
 side = {'left','right'};
 hemi = {'lh','rh'};
 for x = 1:2,
-    % open each side's gray view 
-    dispi('Opening ', side{x}, ' hidden gray view', verbose);
+    % if view not initialized, build gray coords
+    if ~isdir(fullfile(pwd,'Gray')),
+        dispi('Initializing gray view', verbose);
+        vw = struct('viewType','Gray','leftPath',t1_file);
+        buildGrayCoords(vw,fullfile(pwd,'Gray','coords.mat'),0,[],gray_n);
+    end
+    % initialize gray view
     vw = initHiddenGray;
     
     % build mesh
@@ -82,4 +98,7 @@ mrmCloseWindow(1003,'localhost');
 mrmCloseWindow(1005,'localhost');
 mrmCloseWindow(1007,'localhost');
 system('kb_mrmClose.sh');
+
+% return to initialDir
+cd(initialDir);
 end
