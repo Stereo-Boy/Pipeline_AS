@@ -1,8 +1,8 @@
 function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varargin)
-% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'],['errorON'])
+% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'], ['errorON'])
 % 
 % Inputs:
-% steps - number or numberic array of steps to run (default is all, see below)
+% steps - number or numberic array of steps to run (default is 1:16, see below)
 % subj_dir - string subject directory (default is pwd)
 % subjID - string subject id (default is '')
 % params - structure containing fields used as variables in the pipeline;
@@ -13,6 +13,7 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 %
 % Outputs: 
 % params - structure containing fields used as variables in the pipeline
+% params.output{step} will contain any outputs from each step run
 %
 % Steps available to run:
 %   0.  All of the below steps
@@ -21,16 +22,17 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 %   3.  correction of gray mesh irregularities
 %   4.  segmentation using freesurfer
 %   5.  removal of ''pRF dummy'' frames
-%   6.  motion correction
-%   7.  motion outliers
-%   8.  initialization of mrVista session
-%   9.  alignment of inplane and volume
-%   10. segmentation installation
-%   11. mesh creation
-%   12. pRF model
-%   13. mesh visualization of pRF values
-%   14. extraction of flat projections
-%   15. exp epi: actual GLM model
+%   6.  slice timing correction
+%   7.  motion correction
+%   8.  motion outliers
+%   9.  initialization of mrVista session
+%   10. alignment of inplane and volume
+%   11. segmentation installation
+%   12. mesh creation
+%   13. pRF model
+%   14. mesh visualization of pRF values
+%   15. extraction of flat projections
+%   16. exp epi: actual GLM model
 %
 % Written Nov 2016
 % Justin Theiss and Adrien Chopin
@@ -48,8 +50,13 @@ if nargin==0,
     cellfun(@(x,y)dispi('    ', x, ': ', y), fields, values);
     return; 
 end;
-if ~exist('steps','var')||all(steps==0), steps = 1:15; end;
-if ~exist('params','var'), params = local_getparams(struct, steps, 'set'); end;
+% if steps==0, set to all
+if ~exist('steps','var')||all(steps==0), steps = 1:16; end;
+if ~exist('params','var')||isempty(params), % set params if none
+    params = local_getparams(struct, steps, 'set'); 
+elseif ischar(params), % load params if char
+    load(params);
+end; % set notes_dir, verbose, err
 if ~exist('notes_dir','var')||isempty(notes_dir), notes_dir = ''; end;
 if ~any(strcmp(varargin,'verboseOFF')), verbose = 'verboseON'; end;
 if ~any(strcmp(varargin,'errorON')), err = 'errorOFF'; end;
@@ -61,6 +68,11 @@ params = local_getparams(params, steps, 'defaults');
 fields = fieldnames(params);
 values = struct2cell(params);
 cellfun(@(x,y)assignin('caller', x, y), fields(:), values(:));
+
+% set outputs in params
+if ~isfield(params,'outputs'), params.outputs = cell(max(steps),1); end;
+if ~iscell(params.outputs), params.outputs = {params.outputs}; end;
+params.outputs(steps) = {[]};
 
 % init subj_dir, subjID
 if ~exist('subj_dir','var')||isempty(subj_dir), subj_dir = pwd; end;
@@ -91,9 +103,12 @@ for x = steps
     [~, newfields] = local_getparams(params, x, 'defaults');
      
     % append dir to subj_dir with local_fullfile
-    dir_fields = regexp(newfields,'_dir$','match');
+    dir_fields = regexp([fields, newfields],'.*_dir$','match');
     dir_fields = [dir_fields{:}];
-    cellfun(@(x)assignin('caller', x, local_fullfile(subj_dir, eval(x))), dir_fields);
+    if ~isempty(dir_fields), % evaluate dir_fields in current context
+        if ~iscell(dir_fields), dir_fields = {dir_fields}; end;
+        cellfun(@(x)assignin('caller',x,local_fullfile(subj_dir,eval(x))),dir_fields);
+    end
     
     % check fields prior to step
     local_stepchecks(fields, err, verbose);
@@ -104,71 +119,91 @@ for x = steps
     switch x
         case 1 % nifti conversion
             % get dcm dirs
-            dcm_dirs = get_dir(dcm_dir,dcm_expr);
+            dcm_dirs = get_dir(dcm_dir,dcm_expr); 
             % run dcm2niix
             loop_system('dcm2niix','-z y','-f %f','-o',ni_dir,dcm_dirs(:),verbose);
+            % set outputs
+            params.outputs{x} = fullfile(ni_dir,strcat(dcm_dirs,'.nii.gz'));
         case 2 % nifti header repair
             dispi('Copying ',fullfile(ni_dir,nifix_expr),' to ',nifix_dir,verbose);
             copyfile(fullfile(ni_dir,nifix_expr),nifix_dir);
+            % fix headers
             fixHeader(nifix_dir,nifix_expr,'freq_dim',1,'phase_dim',2,'slice_dim',3);
+            % set outputs
+            params.outputs{x} = get_dir(nifix_dir,nifix_expr);
         case 3 % segmentation using freesurfer
-            segmentation(subjID,nifix_dir,seg_dir,verbose);
+            segmentation(subjID,ni_dir,seg_dir,verbose);
+            % set outputs
+            params.outputs{x} = get_dir(seg_dir,'*.nii*');
         case 4 % correction of gray mesh irregularities
-            %%%%%
+            % rename t1_class file to _edited with warning
         case 5 % removal of ''pRF dummy'' frames
             % get epis
             epis = get_dir(nifix_dir,nifix_expr);
             % remove frames
             loop_feval(@remove_frames,epis(:),dummy_n,verbose);
-        case 6 % motion correction
+            % set outputs
+            params.outputs{x} = epis;
+        case 6 % slice timing correction
+            % get epis
+            epis = get_dir(nifix_dir,nifix_expr);
+            % run slice time correction
+            params.outputs{x} = slice_timing(epis, tr, slc_n, verbose, slc_args{:});
+        case 7 % motion correction
             % copy files
-            dispi('Copying ',fullfile(nifix_dir,epi_expr),' to ',mc_dir,verbose);
-            copyfile(fullfile(nifix_dir,epi_expr),mc_dir);
+            dispi('Copying ',fullfile(nifix_dir,slc_expr),' to ',mc_dir,verbose);
+            copyfile(fullfile(nifix_dir,slc_expr),mc_dir);
             % get gems file
-            gems = get_dir(nifix_dir,ref_expr,1);
+            gems = get_dir(ref_dir,ref_expr,1);
             % motion correction
-            motion_correction(mc_dir,epi_expr,{'reffile',gems,1},...
+            motion_correction(mc_dir,slc_expr,{'reffile',gems,1},...
                 '-plots','-report','-cost mutualinfo','-smooth 16',verbose);
-        case 7 % motion outliers
-            bad_trs = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
-            dispi('Outliers:\n', bad_trs, verbose);
-        case 8 % initialization of mrVista session
+            % set outputs
+            params.outputs{x} = get_dir(mc_dir,'*_mcf.nii*');
+        case 8 % motion outliers
+            params.outputs{x} = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
+            dispi('Outliers:\n', params.outputs{x}, verbose);
+        case 9 % initialization of mrVista session
             % get gems, mprage
-            gems = get_dir(nifix_dir,gems_expr,1);
-            mprage = get_dir(seg_dir,mprage_expr,1);
+            gems = get_dir(ni_dir,ref_expr,1);
+            mprage = get_dir(seg_dir,vol_expr,1);
             % init session
             close all;
-            init_session(mr_dir,ni_dir,'inplane',gems,'functionals',epi_expr,...
-                'vAnatomy',mprage,'sessionDir',mr_dir,'subject', subjID);
-        case 9 % alignment of inplane and volume
+            init_session(mr_dir,mc_dir,'inplane',gems,'functionals',epi_expr,...
+                'vAnatomy',mprage,'sessionDir',mr_dir,'subject',subjID);
+            % set outputs
+            params.outputs{x} = get_dir(mr_dir,'mr*.mat');
+        case 10 % alignment of inplane and volume
             % get gems, mprage, ipath
-            vol = get_dir(nifix_dir,vol_expr,1);
-            ref = get_dir(seg_dir,ref_expr,1);
-            ipath = get_dir(dcm_dir,vol,1);
+            ref = get_dir(ni_dir,ref_expr,1);
+            vol = get_dir(seg_dir,vol_expr,1);
+            ipath = get_dir(dcm_dir,i_expr,1);
             % run alignment
-            xform = alignment(mr_dir,vol,ref,ipath);
+            xform = alignment(mr_dir,vol,ref,ipath,align_n);
             dispi('Resulting xform matrix:\n',xform,verbose);
             % extract performance
-            extractAlignmentPerfStats(mr_dir,ref_slc_n,verbose);
-        case 10 % segmentation installation
-            initialPath = pwd; cd(mr_dir);
+            [avgcorr, sumrmse] = extractAlignmentPerfStats(mr_dir,ref_slc_n,verbose);
+            params.outputs{x} = {avgcorr, sumrmse};
+            close('all');
+        case 11 % segmentation installation
             install_segmentation(mr_dir,seg_dir,ni_dir,verbose);
-            cd(initialPath);
-        case 11 % mesh creation
-            initialPath = pwd; cd(mr_dir);
-            create_mesh(mesh_dir,600,verbose);
-            cd(initialPath);
-        case 12 % pRF model
-            pRF_model(mr_dir,epi_dir,epi_expr,prf_params,true,verbose);
-        case 13 % mesh visualization of pRF values
-        case 14 % extraction of flat projections
-        case 15 % exp epi: actual GLM model
+            
+        case 12 % mesh creation
+            t1_file = get_dir(seg_dir,t1_expr,1);
+            create_mesh(mr_dir,mesh_dir,t1_file,iter_n,gray_n,verbose);
+            % set outputs
+            params.outputs{x} = get_dir(mesh_dir,'*.mat');
+        case 13 % pRF model
+            params.outputs{x} = pRF_model(mr_dir,epi_dir,epi_expr,prf_type,prf_params,true,verbose);
+        case 14 % mesh visualization of pRF values
+        case 15 % extraction of flat projections
+        case 16 % exp epi: actual GLM model
         otherwise % unknown step
             warning_error('Step ',x,' not understood',verbose);
     end
 end
 catch err % if error, return
-    dispi('Error: ', err.message, verbose);
+    getReport(err, 'extended', 'hyperlinks', 'off');
     record_notes('off');
     return;
 end
@@ -209,34 +244,37 @@ for x = steps,
         case 5 % removal of "pRF dummy" frames
             fields = cat(2, fields, {'dummy_n'});
             values = cat(2, values, {5});
-        case 6 % motion correction
+        case 6 % slice timing correction
+            fields = cat(2, fields, {'tr','slc_n','slc_args','slc_expr'});
+            values = cat(2, values, {2,24,{},'aepi*.nii*'});
+        case 7 % motion correction
             fields = cat(2, fields, {'mc_dir','mc_expr','ref_dir','ref_expr'});
             values = cat(2, values, {'MoCo','*_mcf.nii*','nifti','gems*.nii*'});
-        case 7 % motion outliers
+        case 8 % motion outliers
             fields = cat(2, fields, {});
             values = cat(2, values, {});
-        case 8 % initialization of mrVista session
-            fields = cat(2, fields, {'mr_dir'});
-            values = cat(2, values, {'mrVista_Session'});
-        case 9 % alignment of inplane and volume
-            fields = cat(2, fields, {'vol_dir','vol_expr','ref_slc_n'});
-            values = cat(2, values, {'Segmentation','mprage*.nii*',24});
-        case 10 % segmentation installation
+        case 9 % initialization of mrVista session
+            fields = cat(2, fields, {'mr_dir','vol_expr'});
+            values = cat(2, values, {'mrVista_Session','*nu_RAS*.nii*'});
+        case 10 % alignment of inplane and volume
+            fields = cat(2, fields, {'vol_dir','i_expr','ref_slc_n','align_n'});
+            values = cat(2, values, {'Segmentation','gems*',24,1:5});
+        case 11 % segmentation installation
             fields = cat(2, fields, {});
             values = cat(2, values, {});
-        case 11 % mesh creation
-            fields = cat(2, fields, {'mesh_dir'});
-            values = cat(2, values, {'Mesh'});
-        case 12 % pRF model
-            fields = cat(2, fields, {'epi_dir','epi_expr','prf_params'});
-            values = cat(2, values, {'MoCo','epi*_mcf.nii*',[]});
-        case 13 % mesh visualization of pRF values
+        case 12 % mesh creation
+            fields = cat(2, fields, {'mesh_dir','t1_expr','iter_n','gray_n'});
+            values = cat(2, values, {'Mesh','*t1_class_edited*.nii*',600,4});
+        case 13 % pRF model
+            fields = cat(2, fields, {'epi_dir','epi_expr','prf_type','prf_params'});
+            values = cat(2, values, {'MoCo','aepi*_mcf.nii*',3,[]});
+        case 14 % mesh visualization of pRF values
             fields = cat(2, fields, {});
             values = cat(2, values, {});
-        case 14 % extraction of flat projections
+        case 15 % extraction of flat projections
             fields = cat(2, fields, {});
             values = cat(2, values, {});
-        case 15 % exp epi: actual GLM model
+        case 16 % exp epi: actual GLM model
             fields = cat(2, fields, {});
             values = cat(2, values, {});
     end 
@@ -298,6 +336,8 @@ if any(strncmp(varargin,'error',5)),
 else % default off
     err = 'errorOFF';
 end
+% display fields being checked
+dispi('Checking fields:\n',fields(:),verbose);
 % for each field, eval for value
 values = cell(size(fields));
 for x = 1:numel(fields),

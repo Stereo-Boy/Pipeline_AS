@@ -39,13 +39,11 @@ function pRF_model(mr_dir, epi_dir, expr, params, overwrite, verbose)
 % Created by Justin Theiss 11/2016
 
 % init defaults
-curdir = pwd; 
 if ~exist('verbose','var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'; end
 if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
 if ~exist('epi_dir','var')||isempty(epi_dir), epi_dir = fullfile(mr_dir,'nifti'); end;
 if ~exist('expr','var')||isempty(expr), expr = 'epi*.nii*'; end;
 if ~exist('params','var')||~isstruct(params),
-    dispi('No parameters detected for pRF_model (should be in separate parameter files): loading default', verbose)
     params.analysis = struct('fieldSize',9.1,...
             'sampleRate',.28);
     params.stim(1) = struct('stimType', '8Bars',...
@@ -67,6 +65,8 @@ if ~exist('params','var')||~isstruct(params),
             'nOffBlock', 6.5,...
             'hrfType','two gammas (SPM style)',...
             'hrfParams',{{[1.68 3 2.05],[5.4 5.2 10.8 7.35 0.35]}});
+    dispi('No parameters detected for pRF_model. Loading default:\n',...
+        params.analysis,'\n',params.stim,verbose);
 end
 if ~exist('overwrite','var')||isempty(overwrite),
     overwrite = false;
@@ -77,12 +77,11 @@ dispi(mfilename,'\nmr_dir:\n',mr_dir,'\nepi_dir:\n',epi_dir,'\nparams:\n',params
     '\noverwrite:\n',overwrite,verbose);
 
 % get epis in epi_dir
-d = dir(fullfile(epi_dir,expr));
-files = fullfile(epi_dir,{d.name});
-dispi('We will run the model with the following EPI files: ', verbose)
-dispi(files,verbose)
+files = get_dir(epi_dir,expr);
+dispi('We will run the model with the average of the following EPI files:\n', files, verbose);
 
 % load session data
+initialDir = pwd;
 cd(mr_dir);
 mrGlobals
 vw = initHiddenInplane;
@@ -93,17 +92,18 @@ if exist(fullfile(mr_dir,'Inplane','Averages'),'dir') && ~overwrite,
     dispi(fullfile(mr_dir,'Inplane','Averages'), ' directory already exists.', verbose);
 elseif exist(fullfile(mr_dir,'Inplane','Averages'),'dir') && overwrite, 
     % delete current Averages dir and remove dataTYPES(end)
-    dispi('Removing previous Inplane average and average dataType', verbose)
+    dispi('Removing previous Inplane average and average dataType', verbose);
     remove_previous(fullfile(mr_dir,'Inplane','Averages'), verbose);
     load('mrSESSION.mat','dataTYPES');
     dataTYPES(end) = [];
     save('mrSESSION.mat','dataTYPES','-append');
-    dispi('Removing previous Gray/Averages and retino model files', verbose)
+    dispi('Removing previous Gray/Averages and retino model files', verbose);
     remove_previous(fullfile(mr_dir,'Gray','Averages'), verbose);
 end
 
 % run averageTSeries
 if overwrite, 
+    dispi('Averaging files to single tSeries.nii.gz', verbose);
     vw.curDataType = 1;
     vw = averageTSeries(vw, 1:numel(files)); 
 end;
@@ -124,5 +124,5 @@ vol.rm.retinotopyParams = params;
 rmMain(vol,[],3);
 
 % close figures and return to previous dir
-cd(curdir);
+cd(initialDir);
 close all;
