@@ -3,8 +3,8 @@ function varargout = loop_feval(varargin)
 % Loop feval calls based on max number of arguments
 % 
 % Inputs:
-% function: cellstring function(s) to be called
-% options: cellstring option(s) to be included
+% function: cell array function(s) to be called
+% options: cell array option(s) to be included
 % 'verboseOFF': prevent output display (default is 'verboseON')
 % 
 % Outputs:

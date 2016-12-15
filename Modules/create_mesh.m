@@ -1,5 +1,5 @@
 function create_mesh(mr_dir, mesh_dir, t1_file, iter_n, gray_n, verbose)
-% create_mesh(mesh_dir, iter_n, verbose)
+% create_mesh(mr_dir, mesh_dir, t1_file, iter_n, gray_n, verbose)
 % Builds and saves a smoothed and inflated mesh for each hemispheres
 %
 % Inputs:
@@ -67,9 +67,7 @@ for x = 1:2,
     % save pial mesh to mesh_dir
     filename = fullfile(mesh_dir,[hemi{x},'_pial.mat']);
     msh = viewGet(vw, 'Mesh');
-    msh = meshSet(msh,'path',fileparts(filename));
-    msh = meshSet(msh,'filename',filename);
-    save(filename, 'msh');
+    msh = mrmWriteMeshFile(msh, filename, strcmp(verbose,'verboseON'));
     dispi('Saving unfolded mesh in %s\n', filename, verbose);
     
     % inflate and smooth left mesh
@@ -84,9 +82,7 @@ for x = 1:2,
     % save unfolded mesh to mesh_dir
     filename = fullfile(mesh_dir,[hemi{x},'_inflated.mat']);
     dispi('Saving unfolded ', side{x}, ' mesh', verbose);
-    msh = meshSet(msh,'path',fileparts(filename));
-    msh = meshSet(msh,'filename',filename);
-    save(filename, 'msh');
+    msh = mrmWriteMeshFile(msh, filename, strcmp(verbose,'verboseON'));
     dispi('Saving unfolded mesh in %s\n', filename, verbose);
 end
 
