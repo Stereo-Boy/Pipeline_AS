@@ -394,10 +394,7 @@ try
                 
          case {11}  %   11. retino epi: segmentation installation
              dispi(' --------------------  ',step, '. retino epi/gems: install of segmentation  ------------------------------', verbose) 
-             initialPath=cd;
-             cd(retinoMrSessionFolder)
              install_segmentation(retinoMrSessionFolder, mprageSegmentedFolder, retinoMrNiftiDir, verbose)
-             cd(initialPath)
              dispi(' --------------------------  retino epi: end of install of segmentation  ----------------------------------------', verbose)
              
         case {12}  %   12. retino/epi: mesh creation
