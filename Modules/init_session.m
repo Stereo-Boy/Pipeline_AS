@@ -62,16 +62,16 @@ dispi(mfilename,'\nmr_dir: ',mr_dir,'\nnifti_dir: ',nifti_dir,...
 % get params from mrInit_parmas, if exists
 if exist(fullfile(mr_dir,'mrInit_params.mat'),'file'),
     load(fullfile(mr_dir,'mrInit_params.mat'));
-    dispi('Loaded default parameters from previous session file', verbose)
+    dispi('Loaded default parameters from previous session file', verbose);
 else % set default
-    dispi('Loaded default parameters from mrInitDefaultParams',verbose)
+    dispi('Loaded default parameters from mrInitDefaultParams', verbose);
     params = mrInitDefaultParams;
 end
 
 % set parameters using varargin
 for x = 1:2:numel(varargin),
     % if *, set from dir
-    if any(strfind(varargin{x+1},'*')),
+    if ischar(varargin{x+1}) && any(strfind(varargin{x+1},'*')),
         % if a directory is included, use that dir when searching
         tmp_dir = fileparts(varargin{x+1});
         % if no directory included, set to nifti_dir
@@ -90,15 +90,12 @@ end
 dispi(params, verbose);
 
 % initialize the session
-initialDir = pwd;
-cd(mr_dir);
 mrInit(params);
 
 %define and attribute vAnatomy file
 vANATOMYPATH = params.vAnatomy;
-save(fullfile(cd,'mrSESSION.mat'), 'vANATOMYPATH', '-append');
-dispi('vANATOMYPATH defined to ', params.vAnatomy, verbose); %alternative: vANATOMYPATH = setVAnatomyPath; 
-cd(initialDir);
+save(fullfile(mr_dir,'mrSESSION.mat'), 'vANATOMYPATH', '-append');
+dispi('vANATOMYPATH defined to ', params.vAnatomy, verbose); 
 return;
 
 
