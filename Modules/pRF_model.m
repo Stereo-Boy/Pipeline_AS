@@ -1,5 +1,5 @@
 function fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, overwrite, verbose)
-% fit_file = pRF_model(mr_dir, epi_dir, type, params, overwrite, verbose)
+% fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, overwrite, verbose)
 %
 % Inputs:
 % mr_dir: string directory containing mrSESSION.mat file (default is pwd)

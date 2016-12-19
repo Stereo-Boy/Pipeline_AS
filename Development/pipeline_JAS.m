@@ -334,7 +334,7 @@ try
                 listConfounds=list_files(retinoNiftiFolder, '*confound*', 1);
                 if numel(listConfounds)>0; dispi('Found ', numel(listConfounds),' confound files that are deleted now', verbose); delete(listConfounds{:}); end
                 dispi('Using motion_outliers code from FSL for detecting artefacts', verbose)
-                bad_trs=motion_outliers(retinoNiftiFolder, '-p', fullfile(retinoNiftiFolder,'motion_params.png'), '--dvars');
+                bad_trs=motion_outliers(retinoNiftiFolder, 'epi*.nii*', '-p', fullfile(retinoNiftiFolder,'motion_params.png'), '--dvars', verbose);
                 dispi('Suspicious TR detected are:', verbose)
                 disp(bad_trs)
                 %TO DO HERE
@@ -394,10 +394,7 @@ try
                 
          case {11}  %   11. retino epi: segmentation installation
              dispi(' --------------------  ',step, '. retino epi/gems: install of segmentation  ------------------------------', verbose) 
-             initialPath=cd;
-             cd(retinoMrSessionFolder)
              install_segmentation(retinoMrSessionFolder, mprageSegmentedFolder, retinoMrNiftiDir, verbose)
-             cd(initialPath)
              dispi(' --------------------------  retino epi: end of install of segmentation  ----------------------------------------', verbose)
              
         case {12}  %   12. retino/epi: mesh creation
@@ -407,7 +404,8 @@ try
              remove_previous(retinoMeshFolder, verbose);
              check_folder(retinoMrSessionFolder, 1, verbose);
              check_folder(retinoMeshFolder, 0, verbose);
-             create_mesh(retinoMeshFolder, param.smoothingIterations, verbose)
+             t1file = get_dir(mprageSegmentedFolder, '*t1_class_edited*.nii*', 1);
+             create_mesh(retinoMrSessionFolder, retinoMeshFolder, t1file, 600, 0, verbose)
              dispi('Checking for output mesh files in Mesh folder', verbose)
              check_files(retinoMeshFolder, 'lh_pial.mat', 1, verbose);
              check_files(retinoMeshFolder, 'rh_pial.mat', 1, verbose);
@@ -419,7 +417,7 @@ try
          case {13}  %  13. retino epi: pRF model
              dispi(' --------------------  ',step, '. retino/epi: pRF model ------------------------------', verbose) 
              check_folder(retinoMrSessionFolder, 1, verbose);
-             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*epi*.nii*', param, 1, verbose)
+             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*epi*.nii*', 3, param, 1, verbose)
              dispi('Check success of pRF model', verbose)
              check_files(fullfile(retinoMrSessionFolder,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists
              dispi(' --------------------------  retino/epi: end of pRF model ----------------------------------------', verbose)
