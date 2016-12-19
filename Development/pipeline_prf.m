@@ -19,8 +19,8 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 %   0.  All of the below steps
 %   1.  nifti conversion
 %   2.  nifti header repair
-%   3.  correction of gray mesh irregularities
-%   4.  segmentation using freesurfer
+%   3.  segmentation using freesurfer
+%   4.  correction of gray mesh irregularities  
 %   5.  removal of ''pRF dummy'' frames
 %   6.  slice timing correction
 %   7.  motion correction
@@ -136,7 +136,23 @@ for x = steps
             % set outputs
             params.outputs{x} = get_dir(seg_dir,'*.nii*');
         case 4 % correction of gray mesh irregularities
-            % rename t1_class file to _edited with warning
+            % check for t1_class_edited file
+            if ~check_exist(seg_dir,t1_expr,1,err,verbose),
+                if check_exist(seg_dir,'*t1*.nii*',1,err,verbose),
+                    % rename t1_file with "_edited" appended
+                    t1_file = get_dir(seg_dir, '*t1*.nii*', 1);
+                    t1_edit_file = strrep(t1_file, '.nii', '_edited.nii');
+                    copyfile(t1_file, t1_edit_file);
+                    % throw warning that user should check t1_file
+                    warning_error('Renaming ', t1_file, ' as "_edited" for later steps.\n',...
+                        'However, this file should be manually checked for irregularities.',...
+                        verbose);
+                end
+            else % set t1_edit_file to get_dir(seg_dir,t1_expr)
+                t1_edit_file = get_dir(seg_dir, t1_expr, 1);
+            end
+            % set outputs
+            params.outputs{x} = t1_edit_file;
         case 5 % removal of ''pRF dummy'' frames
             % get epis
             epis = get_dir(nifix_dir,nifix_expr);
@@ -202,8 +218,9 @@ for x = steps
             warning_error('Step ',x,' not understood',verbose);
     end
 end
-catch err % if error, return
-    getReport(err, 'extended', 'hyperlinks', 'off');
+catch ME % if error, return with err_msg
+    err_msg = getReport(ME, 'extended', 'hyperlinks', 'off');
+    dispi(err_msg, verbose);
     record_notes('off');
     return;
 end
@@ -239,8 +256,8 @@ for x = steps,
             fields = cat(2, fields, {'seg_dir'});
             values = cat(2, values, {'Segmentation'});
         case 4 % correction of gray mesh irregularities
-            fields = cat(2, fields, {});
-            values = cat(2, values, {});
+            fields = cat(2, fields, {'t1_expr'});
+            values = cat(2, values, {'*t1_class_edited*.nii*'});
         case 5 % removal of "pRF dummy" frames
             fields = cat(2, fields, {'dummy_n'});
             values = cat(2, values, {5});
@@ -263,8 +280,8 @@ for x = steps,
             fields = cat(2, fields, {});
             values = cat(2, values, {});
         case 12 % mesh creation
-            fields = cat(2, fields, {'mesh_dir','t1_expr','iter_n','gray_n'});
-            values = cat(2, values, {'Mesh','*t1_class_edited*.nii*',600,4});
+            fields = cat(2, fields, {'mesh_dir','iter_n','gray_n'});
+            values = cat(2, values, {'Mesh',600,0});
         case 13 % pRF model
             fields = cat(2, fields, {'epi_dir','epi_expr','prf_type','prf_params'});
             values = cat(2, values, {'MoCo','aepi*_mcf.nii*',3,[]});
