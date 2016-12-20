@@ -5,7 +5,9 @@ function fixHeader(fix_dir, expr, varargin)
 % fix_dir: string directory containing nifti files to correct headers
 % (default is pwd)
 % expr: string expression to find files in fix_dir (default is '*.nii*')
-% varargin: header fields to fix followed by value to use
+% varargin: header fields to fix followed by value to use.
+% if value is string and begins with 'eval(' and ends with ')', the value 
+% will be evaluated
 % 'verboseOFF': turn off verbose printout (default is 'verboseON')
 %
 % Outputs:
@@ -55,7 +57,11 @@ for x = 1:numel(files),
     ni = readFileNifti(files{x});
     % for each varargin, set header field
     for n = 1:numel(fields),
-        ni.(fields{n}) = values{n};
+        if strncmp(values{n},'eval(',5),
+            ni.(fields{n}) = eval(values{n}(6:end-1));
+        else
+            ni.(fields{n}) = values{n};
+        end
     end
     % display file and nifti structure
     dispi('File ',x,': ',files{x},'\n',ni,verbose);

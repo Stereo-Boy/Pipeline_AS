@@ -1,5 +1,5 @@
-function fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, overwrite, verbose)
-% fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, overwrite, verbose)
+function fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, stim_fun, overwrite, verbose)
+% fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, stim_fun, overwrite, verbose)
 %
 % Inputs:
 % mr_dir: string directory containing mrSESSION.mat file (default is pwd)
@@ -7,6 +7,7 @@ function fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, overwrite, ve
 % expr: string expression of files within epi_dir (default 'epi*.nii*')
 % type: type of model, 'wSearch' from rmMain (default 3)
 % params: structure of parameters for pRF model (default: see below)
+% stim_fun: make stimulus function (default is @make8Bars)
 % overwrite: boolean true/false to overwrite any previous work (default
 % is false)
 % verbose: 'verboseOFF' to prevent displays (default is 'verboseON')
@@ -70,9 +71,8 @@ if ~exist('params','var')||~isstruct(params),
     dispi('No parameters detected for pRF_model. Loading default:\n',...
         params.analysis,'\n',params.stim,verbose);
 end
-if ~exist('overwrite','var')||isempty(overwrite),
-    overwrite = false;
-end
+if ~exist('stim_fun','var')||isempty(stim_fun), stim_fun = @make8Bars; end;
+if ~exist('overwrite','var')||isempty(overwrite), overwrite = false; end;
 
 % print function and inputs
 dispi(mfilename,'\nmr_dir:\n',mr_dir,'\nepi_dir:\n',epi_dir,'\nparams:\n',params,...
@@ -118,7 +118,7 @@ vol = ip2volTSeries(vw,vol,0,'linear');
 % set retinotopic parameters
 vol.rm.retinotopyParams = params;
 params = rmDefineParameters(vol);
-params = make8Bars(params,1);
+params = feval(stim_fun, params, 1);
 params = rmMakeStimulus(params);
 vol.rm.retinotopyParams = params;
 

@@ -1,11 +1,11 @@
 function install_segmentation(mr_dir, seg_dir, ni_dir, verbose)
-% install_segmentation(mrVistaFolder, segmentationFolder, niftiFolder, verbose)
+% install_segmentation(mr_dir, seg_dir, ni_dir, verbose)
 % Installs volume anatomy and an existing cortical segmentation into an existing mrSESSION
 %
 % Inputs:
-% mr_dir - mrVista session folder
-% seg_dir - the folder containing last t1_class edited files
-% ni_dir - where this files should go in the mrVistaFolder 
+% mr_dir - string path of mrVista session folder
+% seg_dir - string path of directory containing t1_class edited files
+% ni_dir - string path of directory to move t1_class edited files
 %
 % Outputs:
 % opens gray mrvista window (if installation fails, window will not open)
@@ -39,8 +39,8 @@ check_exist(seg_dir, '*t1_class*edited*', 1, 'errorON', verbose);
 dispi('Copying ',fullfile(seg_dir,'*t1_class*edited*'),' to ',ni_dir,verbose);
 copyfile(fullfile(seg_dir, '*t1_class*edited*'), ni_dir);
 seg_file = get_dir(ni_dir, '*t1_class*edited*', 1);
-segFilePaths = {seg_file, seg_file, '', ''}; %this path needs to have the following structure: lef class file, right class
-			 	       % file, empty gray left path, empty right gray path 
+% needs following structure: left class, right class, empty gray left, empty right gray 
+segFilePaths = {seg_file, seg_file, '', ''};
 numGrayLayers = 3;
 
 % display parameters
@@ -59,4 +59,3 @@ installSegmentation(query, keepAllNodes, segFilePaths, numGrayLayers);
 open3ViewWindow('gray');
 cd(initialDir);
 end
-

@@ -52,7 +52,7 @@ if ~exist('n','var')||isempty(n), n = []; end;
 d = dir(fullfile(fld, expr));
 
 % if expr ends with file sep, only return isdir
-if strcmp(expr(end),filesep),
+if ~isempty(expr) && strcmp(expr(end),filesep),
     d = d([d.isdir]);
 end
 
