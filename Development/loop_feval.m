@@ -61,12 +61,14 @@ for f = 1:n,
     % allowable output number
     fout_n = nargout(funcs{f}); 
     if fout_n < 0, fout_n = nargout; end;
+    % get options for funcs{f}
+    opts = options(f,cellfun(@(x)~isempty(x)||ischar(x),options(f,:)));
     % display inputs
     dispi('\n',funcs{f},'\ninputs:',verbose);
-    cellfun(@(x)dispi(x, verbose), options(f,~cellfun('isempty',options(f,:))));
+    cellfun(@(x)dispi(x, verbose), opts);
     dispi('',verbose);
     % run feval
-    [output{1:min(vout_n,fout_n)}] = feval(funcs{f}, options{f,~cellfun('isempty',options(f,:))}); 
+    [output{1:min(vout_n,fout_n)}] = feval(funcs{f}, opts{:}); 
     % display result
     dispi('\noutputs:',verbose);
     cellfun(@(x)dispi(x, verbose), output);
