@@ -84,14 +84,14 @@ slc_files = cellfun(@(x,y,z){fullfile(x, [prefix, y, z])}, path, sfiles, ext);
 
 % gzip if .gz
 if any(gz),
-    % delete previous nii files
-    delete(files{gz});
+    % delete previous gz files
+    delete(gzfiles{:});
     % get gz files
     gzfiles = slc_files(gz);
     % loop feval gzip
     loop_feval(@gzip, gzfiles(:), verbose);
-    % delete gzfiles
-    delete(gzfiles{:});
+    % delete previous nii files
+    delete(files{gz});
     % set files with .gz
     slc_files(gz) = cellfun(@(x){[x, '.gz']}, slc_files(gz));
 end

@@ -76,7 +76,7 @@ if ~exist('overwrite','var')||isempty(overwrite), overwrite = false; end;
 
 % print function and inputs
 dispi(mfilename,'\nmr_dir:\n',mr_dir,'\nepi_dir:\n',epi_dir,'\nparams:\n',params,...
-    '\noverwrite:\n',overwrite,verbose);
+    '\nstim_fun:\n',stim_fun,'\noverwrite:\n',overwrite,verbose);
 
 % get epis in epi_dir
 files = get_dir(epi_dir,expr);

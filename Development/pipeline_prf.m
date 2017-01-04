@@ -173,7 +173,8 @@ for x = steps
             dispi('Copying ',fullfile(epi_dir,slc_expr),' to ',mc_dir,verbose);
             copyfile(fullfile(epi_dir,slc_expr),mc_dir);
             % switch ref_type for inputs
-            mc_type{1} = ref_type;
+            clear mc_type;
+            mc_type{1} = ref_type; 
             switch ref_type,
                 case 'reffile' % get reference file
                     mc_type{2} = get_dir(ref_dir,ref_expr,1);
@@ -224,7 +225,7 @@ for x = steps
             % set outputs
             params.outputs{x} = get_dir(mesh_dir,'*.mat');
         case 13 % pRF model
-            params.outputs{x} = pRF_model(mr_dir,mc_dir,mc_expr,prf_type,prf_params,true,verbose);
+            params.outputs{x} = pRF_model(mr_dir,mc_dir,mc_expr,prf_type,prf_params,stim_fun,true,verbose);
         case 14 % mesh visualization of pRF values
         case 15 % extraction of flat projections
         case 16 % exp epi: actual GLM model
@@ -280,7 +281,7 @@ for x = steps,
             values = cat(2, values, {'niftiFix','epi*.nii*',1.8,24,{'prefix',''},'epi*.nii*'});
         case 7 % motion correction
             fields = cat(2, fields, {'epi_dir','slc_expr','mc_dir','mc_expr',...
-                'mc_type','ref_dir','ref_expr','ref_n','mc_args'});
+                'ref_type','ref_dir','ref_expr','ref_n','mc_args'});
             values = cat(2, values, {'niftiFix','epi*.nii*','MoCo','*_mcf.nii*',...
                 'reffile','nifti','epi*.nii*',1,{'-plots','-report','-cost mutualinfo','-smooth 16'}});
         case 8 % motion outliers
@@ -303,8 +304,8 @@ for x = steps,
             fields = cat(2, fields, {'seg_dir','t1_expr','mr_dir','mesh_dir','iter_n','gray_n'});
             values = cat(2, values, {'Segmentation','*t1_class_edited*.nii*','mrVista_Session','Mesh',600,0});
         case 13 % pRF model
-            fields = cat(2, fields, {'mr_dir','mc_dir','mc_expr','prf_type','prf_params'});
-            values = cat(2, values, {'mrVista_Session','MoCo','*_mcf.nii*',3,[]});
+            fields = cat(2, fields, {'mr_dir','mc_dir','mc_expr','prf_type','prf_params','stim_fun'});
+            values = cat(2, values, {'mrVista_Session','MoCo','*_mcf.nii*',3,[],@make8Bars});
         case 14 % mesh visualization of pRF values
             fields = cat(2, fields, {});
             values = cat(2, values, {});
@@ -387,6 +388,7 @@ for x = find(~cellfun('isempty',regexp(fields,'.*_dir$'))),
     % find other fields with same beginning
     strfield = regexprep(fields{x},'(\w+_).*','$1');
     idx = ~cellfun('isempty',regexp(fields, ['^',strfield,'[^(dir)]+']));
+    idx = idx(~cellfun(@(x)iscell(x),values(idx)));
     % check exist with dir and other fields
     check_exist(values{x}, values{idx}, verbose, err);
 end
