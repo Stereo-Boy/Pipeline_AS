@@ -193,8 +193,8 @@ for x = steps
             motion_correction(mc_dir,slc_expr,mc_type,mc_args{:},verbose);
             % set outputs
             params.outputs{x} = get_dir(mc_dir,mc_expr);
-        case 8 % motion outliers % allow for other options?
-            params.outputs{x} = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
+        case 8 % motion outliers
+            params.outputs{x} = motion_outliers(mc_dir,mc_expr,mo_args{:});
             dispi('Outliers:\n', params.outputs{x}, verbose);
         case 9 % initialization of mrVista session
             % get gems, mprage
@@ -288,8 +288,8 @@ for x = steps,
             values = cat(2, values, {'niftiFix','epi*.nii*','MoCo','*_mcf.nii*',...
                 'reffile','nifti','epi*.nii*',1,{'-plots','-report','-cost mutualinfo','-smooth 16'}});
         case 8 % motion outliers
-            fields = cat(2, fields, {'mc_dir','mc_expr'});
-            values = cat(2, values, {'MoCo','*_mcf.nii*'});
+            fields = cat(2, fields, {'mc_dir','mc_expr','mo_args'});
+            values = cat(2, values, {'MoCo','*_mcf.nii*',{'--nomoco','--dvars'}});
         case 9 % initialization of mrVista session
             fields = cat(2, fields, {'nifix_dir','seg_dir','mc_dir','epi_expr',...
                 'mr_dir','vol_expr','gems_expr'});
