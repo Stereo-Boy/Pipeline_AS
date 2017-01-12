@@ -7,7 +7,7 @@ function niftiFixHeader3(dataDir)
 
 disp('[niftiFixHeader] WARNING - this is a version specific to analysing Adrien''s experiment with vistasoft 2015 and pipeline_AS.')
 disp('Check the params of your scanning sessions before proceeding (press a key).')
-beep; pause;
+%beep; pause;
 
 %the function opens the below directory and find all COMPRESSED nifty files
 %to fix them, if their names start with keywords epi, gems or mprage

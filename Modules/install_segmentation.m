@@ -48,6 +48,7 @@ dispi('Please check the following user-defined parameters:', verbose);
 dispi('query: ', query, verbose);
 dispi('keepAllNodes: ', keepAllNodes, verbose);
 dispi('classificationPath: ', segFilePaths, verbose);
+dispi('Having a list with two files and two empty string is normal', verbose)
 dispi('numGrayLayers: ', numGrayLayers, verbose);
 
 % install segmentation
