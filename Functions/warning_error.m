@@ -63,7 +63,7 @@ if strcmp(err,'errorON'),
 % warning
 elseif strcmp(verbose,'verboseON')
     % get db stack omitting this function
-    stack = dbstack(1); disp({stack.name})
+    stack = dbstack(1); 
     % interleave names and lines
     name_line = cell(1,numel(stack)*2);
     name_line(1:2:end) = {stack.name};

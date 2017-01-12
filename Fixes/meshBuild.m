@@ -69,7 +69,7 @@ newMesh = meshSet(newMesh,'name',meshName);
 newMesh = meshSet(newMesh,'nGrayLayers',numGrayLayers);
 
 % Now refresh the UI
-vw = viewSet(vw,'add and select mesh',newMesh);
+vw = viewSet(vw,'add and select mesh',newMesh); 
 
 return;
 

@@ -1,17 +1,19 @@
-function pRF_model(mr_dir, epi_dir, expr, params, overwrite, verbose)
-% pRF_model(mr_dir, epi_dir, params, overwrite, verbose)
+function fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, stim_fun, overwrite, verbose)
+% fit_file = pRF_model(mr_dir, epi_dir, expr, type, params, stim_fun, overwrite, verbose)
 %
 % Inputs:
 % mr_dir: string directory containing mrSESSION.mat file (default is pwd)
 % epi_dir: string directory containing files (default is mr_dir/'nifti')
 % expr: string expression of files within epi_dir (default 'epi*.nii*')
+% type: type of model, 'wSearch' from rmMain (default 3)
 % params: structure of parameters for pRF model (default: see below)
+% stim_fun: make stimulus function (default is @make8Bars)
 % overwrite: boolean true/false to overwrite any previous work (default
 % is false)
 % verbose: 'verboseOFF' to prevent displays (default is 'verboseON')
 %
-% Outputs saved:
-% retModel*Fit.mat files that contain results from pRF model
+% Outputs:
+% fit_file: string filepath (retModel*fFit.mat) containing results from pRF model 
 %
 % params default:
 %     params.analysis = struct('fieldSize',9.1,...
@@ -43,6 +45,7 @@ if ~exist('verbose','var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'
 if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
 if ~exist('epi_dir','var')||isempty(epi_dir), epi_dir = fullfile(mr_dir,'nifti'); end;
 if ~exist('expr','var')||isempty(expr), expr = 'epi*.nii*'; end;
+if ~exist('type','var')||isempty(type), type = 3; end;
 if ~exist('params','var')||~isstruct(params),
     params.analysis = struct('fieldSize',9.1,...
             'sampleRate',.28);
@@ -68,13 +71,12 @@ if ~exist('params','var')||~isstruct(params),
     dispi('No parameters detected for pRF_model. Loading default:\n',...
         params.analysis,'\n',params.stim,verbose);
 end
-if ~exist('overwrite','var')||isempty(overwrite),
-    overwrite = false;
-end
+if ~exist('stim_fun','var')||isempty(stim_fun), stim_fun = @make8Bars; end;
+if ~exist('overwrite','var')||isempty(overwrite), overwrite = false; end;
 
 % print function and inputs
 dispi(mfilename,'\nmr_dir:\n',mr_dir,'\nepi_dir:\n',epi_dir,'\nparams:\n',params,...
-    '\noverwrite:\n',overwrite,verbose);
+    '\nstim_fun:\n',stim_fun,'\noverwrite:\n',overwrite,verbose);
 
 % get epis in epi_dir
 files = get_dir(epi_dir,expr);
@@ -116,12 +118,15 @@ vol = ip2volTSeries(vw,vol,0,'linear');
 % set retinotopic parameters
 vol.rm.retinotopyParams = params;
 params = rmDefineParameters(vol);
-params = make8Bars(params,1);
+params = feval(stim_fun, params, 1);
 params = rmMakeStimulus(params);
 vol.rm.retinotopyParams = params;
 
 % run prf
-rmMain(vol,[],3);
+vw = rmMain(vol,[],type);
+
+% set outputs
+fit_file = viewGet(vw, 'rmFile');
 
 % close figures and return to previous dir
 cd(initialDir);

@@ -9,7 +9,7 @@ function create_mesh(mr_dir, mesh_dir, t1_file, iter_n, gray_n, verbose)
 % fullfile(pwd,'t1_class_edited.nii.gz'))
 % iter_n - number of iterations of smoothing iterations for unfolding
 % (default 600 iterations)
-% gray_n - number of gray layers (default is 4)
+% gray_n - number of gray layers (default is 0)
 % verbose - 'verboseOFF' to prevent displays (default is 'verboseON')
 %
 % Outputs:
@@ -24,7 +24,7 @@ if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; end;
 if ~exist('mesh_dir','var')||isempty(mesh_dir), mesh_dir = fullfile(pwd,'Mesh'); end;
 if ~exist('t1_file','var')||isempty(t1_file), t1_file = fullfile(pwd,'t1_class_edited.nii.gz'); end;
 if ~exist('iter_n','var')||isempty(iter_n), iter_n = 600; end;
-if ~exist('gray_n','var')||isempty(gray_n), gray_n = 4; end;
+if ~exist('gray_n','var')||isempty(gray_n), gray_n = 0; end;
 if ~exist('verbose','var')||~strcmp(verbose,'verboseOFF'), verbose = 'verboseON'; end
 
 % cd to mr_dir
@@ -67,23 +67,23 @@ for x = 1:2,
     % save pial mesh to mesh_dir
     filename = fullfile(mesh_dir,[hemi{x},'_pial.mat']);
     msh = viewGet(vw, 'Mesh');
-    msh = mrmWriteMeshFile(msh, filename, strcmp(verbose,'verboseON'));
-    dispi('Saving unfolded mesh in %s\n', filename, verbose);
+    mrmWriteMeshFile(msh, filename, strcmp(verbose,'verboseON'));
+    dispi('Saving unfolded mesh in\n', filename, verbose);
     
     % inflate and smooth left mesh
     dispi('Inflating/smoothing ',side{x},' mesh with ', iter_n, ' iterations ', verbose);
-    msh = viewGet(vw, 'Mesh');
+    msh = meshVisualize(viewGet(vw, 'Mesh'));
     msh = meshSet(msh,'smooth_iterations',iter_n);
     vw = viewSet(vw, 'Mesh', meshSmooth(msh,0));
     dispi('Coloring ',side{x},' mesh', verbose);
+    meshColor(msh);
     msh = meshVisualize(viewGet(vw, 'Mesh'));
-    msh = meshColor(msh);
     
     % save unfolded mesh to mesh_dir
     filename = fullfile(mesh_dir,[hemi{x},'_inflated.mat']);
     dispi('Saving unfolded ', side{x}, ' mesh', verbose);
-    msh = mrmWriteMeshFile(msh, filename, strcmp(verbose,'verboseON'));
-    dispi('Saving unfolded mesh in %s\n', filename, verbose);
+    mrmWriteMeshFile(msh, filename, strcmp(verbose,'verboseON'));
+    dispi('Saving unfolded mesh in\n', filename, verbose);
 end
 
 % close windows and connection to the mesh server

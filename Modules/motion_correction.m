@@ -59,7 +59,7 @@ end
 
 % display inputs
 dispi(mfilename,'\nmc_dir: ',mc_dir,'\nexpr: ',expr,'\ntype: ',type,...
-    '\varargin: ',varargin{:},verbose);
+    '\nvarargin: ',varargin{:},verbose);
 
 % get files
 d = dir(fullfile(mc_dir,expr));
