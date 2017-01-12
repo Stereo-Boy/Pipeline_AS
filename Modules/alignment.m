@@ -41,7 +41,7 @@ if ~exist('steps','var')||isempty(steps), steps = 1:5; end;
 if ~exist('verbose','var')||isempty(verbose), verbose = 'verboseON'; end;
 if ~any(steps==2),
   ipath = [];
-elseif any(steps==2) && (~exist('ipath','var')||isempty(ipath)),
+elseif any(steps==2) && (~exist('ipath','var')||isempty(ipath))||~exist(ipath,'dir'),
     [~,reffile] = fileparts(ref);
     ipath = uigetdir(cd,['Choose I*.dcm folder path for ' reffile]);
 end;

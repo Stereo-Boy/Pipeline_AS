@@ -255,11 +255,12 @@ try
                 %at the moment, it uses the %p to rename the output files so that we have the gems, epi, mprage names in the files.
                 %However, if one uses different names in the dicom  sequences, all names will be incorrect for the next steps (we already have trouble
                 % with some called ep2d instead of epi)
-                check_files(retinoNiftiFolder,'*epi*.nii.gz', nbOfDetectedEpi, 1, verbose);
+                check_files(retinoNiftiFolder,'*ep*.nii.gz', nbOfDetectedEpi, 1, verbose);
                 check_files(retinoNiftiFolder,'*gems*.nii.gz', nbOfDetectedGems, 1, verbose);
                 dispi(' --------------------------  End of retino epi nitfi conversion  ----------------------------------------', verbose)
                 dispi(' --------------------------  Removing dummy pRF frames  ----------------------------------------', verbose)
                 listConvertedEPI=list_files(retinoNiftiFolder, '*epi*.nii.gz', 1);
+                dispi('Now removing frames for ', numel(listConvertedEPI), ' files')
                 for i=1:numel(listConvertedEPI)
                     remove_frames(listConvertedEPI{i}, param.pRFdummyFramesNb, verbose)
                 end  
@@ -283,7 +284,7 @@ try
 %                   %ref volume which should be the newly created ref_vol.nii.gz
 %                 motion_correction(retinoMCfolder, '*gems*.nii.gz', 'reffile',fullfile(retinoMCfolder,'ref_vol.nii.gz'),1) %motion correct the gems second, using the same 
                 
-                reference = 3;
+                reference = 2;
                 % reference values:
                 % 1. gems downsampled at epi resolution
                 % 2. gems at original resolution - epi will be upsampled to gems resolution 
@@ -292,10 +293,10 @@ try
                     case {1}
                         dispi('We want mcFLIRT to motion correct the epis to the downsampled resolution GEMS') 
                         dispi('In that version, the EPIs will not be resampled at high resolution')
-                        epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
+                        epis = list_files(retinoMCfolder, '*ep*.nii.gz', 1);
                         gems = list_files(retinoMCfolder, '*gems*.nii.gz', 1);
-                        refFile=fullfile(retinoMCfolder,'gemsRef90.nii.gz');
-                        fslresample(gems,refFile, '-ref', epis{1}, verbose)
+                        refFile=fullfile(retinoMCfolder,'gemRef90.nii.gz');
+                        fslresample(gems{1},refFile, '-ref', epis{1}, verbose)
                     case {2} % 2. gems at original resolution - epi will be upsampled to gems resolution 
                         dispi('We want mcFLIRT to motion correct the epis to the higher resolution GEMS') 
                         dispi('In that version, we will align the EPIs to the high resolution GEMS, which means EPIS will be resampled at high resolution')
@@ -304,14 +305,14 @@ try
                    case {3} % 3. first epi, first TR - gems is uncorrected
                         dispi('We want mcFLIRT to motion correct the epis to the first TR of the first epi') 
                         dispi('In that version, GEMS remains unaligned')
-                        epis = list_files(retinoMCfolder, '*epi*.nii.gz', 1);
+                        epis = list_files(retinoMCfolder, '*ep*.nii.gz', 1);
                         refFile= epis{1};
                 end
                                         
 
                 %motion correct the epi to the higher resolution gems (as a ref file)
                 dispi('Motion-correcting all epis to the following reference file: ', refFile, verbose);
-                motion_correction(retinoMCfolder, '*epi*.nii.gz', {'reffile', refFile, 1}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
+                motion_correction(retinoMCfolder, '*ep*.nii.gz', {'reffile', refFile, 1}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
 
                 dispi('Check that we have all our MC files in MC folder', verbose)
                 check_files(retinoMCfolder,'*_mcf.nii.gz', nbFiles-1, 1, verbose); %should be nb of epi -1 bc we do not correct our gems
@@ -369,13 +370,13 @@ try
                 dispi('Check that potential folder was correctly removed and creates a new one (will issue a benine warning)', verbose)
                 check_folder(retinoMrSessionFolder, 0, verbose);
                 check_folder(retinoMrNiftiDir, 0, verbose);
-                copy_files(retinoNiftiFixedFolder, '*epi*mcf*.nii.gz', retinoMrNiftiDir, verbose) %copy mcf nifti fixed epi to nifti mrvista folder
+                copy_files(retinoNiftiFixedFolder, '*ep*mcf*.nii.gz', retinoMrNiftiDir, verbose) %copy mcf nifti fixed epi to nifti mrvista folder
                 check_files(retinoNiftiFixedFolder,'*gems*.nii.gz', 1, 1, verbose); %looking for only 1 gems file there (otherwise there is room for errors)
                 copy_files(retinoNiftiFixedFolder, '*gems*.nii.gz', fullfile(retinoMrNiftiDir,gemsFile), verbose) %copy nifti fixed gems to nifti mrvista folder
                 copy_files(mprageNiftiFixedFolder, '*nu_RAS_NoRS*.nii.gz', fullfile(retinoMrNiftiDir,mprageFile), verbose) %copy nifti fixed mprage to nifti mrvista folder
-                check_files(retinoMrNiftiDir,'*epi*mcf*.nii.gz', param.retinoEpiNb, 0, verbose); %looking for all the epis
+                check_files(retinoMrNiftiDir,'*ep*mcf*.nii.gz', param.retinoEpiNb, 0, verbose); %looking for all the epis
                 close all;
-                init_session(retinoMrSessionFolder, retinoMrNiftiDir, 'inplane',fullfile(retinoMrNiftiDir,gemsFile),'functionals','*epi*mcf*.nii*','vAnatomy',fullfile(retinoMrNiftiDir,mprageFile),...
+                init_session(retinoMrSessionFolder, retinoMrNiftiDir, 'inplane',fullfile(retinoMrNiftiDir,gemsFile),'functionals','*ep*mcf*.nii*','vAnatomy',fullfile(retinoMrNiftiDir,mprageFile),...
                     'sessionDir',retinoMrSessionFolder,'subject', subjID)%,'scanGroups', 1:param.retinoEpiNb)
                 %alternative: kb_initializeVista2_retino(retinoMrSessionFolder, subjID)
                 dispi(' --------------------------  retino epi: end of mrVista session initialization ----------------------------------------', verbose)
@@ -386,7 +387,9 @@ try
                 check_folder(retinoMrSessionFolder, 1, verbose);
                 check_folder(retinoDICOMfolder, 1, verbose);
                 check_folder(retinoMrNiftiDir, 1, verbose);
-                xform = alignment(retinoMrSessionFolder, fullfile(retinoMrNiftiDir,mprageFile), fullfile(retinoMrNiftiDir, gemsFile), fullfile(retinoDICOMfolder,'gems_retino_11'));
+                gemsDICOMFolder = list_folders(retinoDICOMfolder, '*gems*', 1); gemsDICOMFolder=gemsDICOMFolder{1};
+                check_folder(gemsDICOMFolder, 1, verbose);
+                xform = alignment(retinoMrSessionFolder, fullfile(retinoMrNiftiDir,mprageFile), fullfile(retinoMrNiftiDir, gemsFile), gemsDICOMFolder);
                 dispi('Resulting xform matrix:',verbose)
                 disp(xform)
                 [averageCorr, sumRMSE]=extractAlignmentPerfStats(retinoMrSessionFolder, param.retinoGemsSliceNb, verbose);
@@ -404,7 +407,8 @@ try
              remove_previous(retinoMeshFolder, verbose);
              check_folder(retinoMrSessionFolder, 1, verbose);
              check_folder(retinoMeshFolder, 0, verbose);
-             create_mesh(retinoMeshFolder, param.smoothingIterations, verbose)
+             editedMprageFile=list_files(retinoMrNiftiDir,'*edited*',1);
+             create_mesh(retinoMrSessionFolder,retinoMeshFolder, editedMprageFile{1}, param.smoothingIterations, 3, verbose)
              dispi('Checking for output mesh files in Mesh folder', verbose)
              check_files(retinoMeshFolder, 'lh_pial.mat', 1, verbose);
              check_files(retinoMeshFolder, 'rh_pial.mat', 1, verbose);
@@ -416,7 +420,7 @@ try
          case {13}  %  13. retino epi: pRF model
              dispi(' --------------------  ',step, '. retino/epi: pRF model ------------------------------', verbose) 
              check_folder(retinoMrSessionFolder, 1, verbose);
-             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*epi*.nii*', param, 1, verbose)
+             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*ep*.nii*', param, 1, verbose)
              dispi('Check success of pRF model', verbose)
              check_files(fullfile(retinoMrSessionFolder,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists
              dispi(' --------------------------  retino/epi: end of pRF model ----------------------------------------', verbose)
@@ -445,10 +449,11 @@ try
                 vol = meshLoad(vol, fullfile(retinoMeshFolder,'lh_inflated.mat'), 1); %Gray | Surface Mesh | Load and Display 
                 %input('Press a key when server ready')
                 vol = meshColorOverlay(vol); %Gray | update mesh
-                cd(curdir)
                 input('Press a key to quit and close visualization')
+                %mrmCloseWindow(windowID,'localhost')
                 close_mesh_server(verbose);
-                
+                [meanvarexp, nbVarSupx] = getAverageModelAccuracy(retinoModelFile{1},10,verbose)
+                cd(curdir)
                 dispi(' -------------------------- retino epi: end of mesh visualization of pRF values ----------------------------------------', verbose)
                 
             %   15. retino epi: extraction of flat projections
@@ -461,7 +466,7 @@ try
                 dispi('Each epi folder should contain the word epi in the name and each gems should contain gems.', verbose)
                 dispi('Check that source folders exist for that step', verbose)
                 check_folder(expDICOMfolder, 1, verbose); %check that DICOM folder exists
-                epiFolders = list_folders(expDICOMfolder, '*epi*', 1); %detects nomber of epi folders
+                epiFolders = list_folders(expDICOMfolder, '*ep*', 1); %detects nomber of epi folders
                 nbOfDetectedEpi=numel(epiFolders); %check whether number of EPI matches with what we expect
                 if nbOfDetectedEpi==param.expEpiNb, dispi(nbOfDetectedEpi,'/',param.expEpiNb,' epis correctly detected', verbose); 
                      else  warni(nbOfDetectedEpi,'/',param.expEpiNb,' epis detected: incorrect number', verbose); end
