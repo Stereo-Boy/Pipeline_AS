@@ -259,8 +259,9 @@ try
                 check_files(retinoNiftiFolder,'*gems*.nii.gz', nbOfDetectedGems, 1, verbose);
                 dispi(' --------------------------  End of retino epi nitfi conversion  ----------------------------------------', verbose)
                 dispi(' --------------------------  Removing dummy pRF frames  ----------------------------------------', verbose)
-                listConvertedEPI=list_files(retinoNiftiFolder, '*epi*.nii.gz', 1);
+                listConvertedEPI=list_files(retinoNiftiFolder, '*ep*.nii.gz', 1);
                 dispi('Now removing frames for ', numel(listConvertedEPI), ' files')
+                if numel(listConvertedEPI)==0; error('There is no epi files found and consequently, no dummy frame will be removed. To avoid further issues, we exit here. Please check.');end
                 for i=1:numel(listConvertedEPI)
                     remove_frames(listConvertedEPI{i}, param.pRFdummyFramesNb, verbose)
                 end  
@@ -284,7 +285,7 @@ try
 %                   %ref volume which should be the newly created ref_vol.nii.gz
 %                 motion_correction(retinoMCfolder, '*gems*.nii.gz', 'reffile',fullfile(retinoMCfolder,'ref_vol.nii.gz'),1) %motion correct the gems second, using the same 
                 
-                reference = 2;
+                reference = 1;
                 % reference values:
                 % 1. gems downsampled at epi resolution
                 % 2. gems at original resolution - epi will be upsampled to gems resolution 
@@ -335,7 +336,7 @@ try
                 listConfounds=list_files(retinoNiftiFolder, '*confound*', 1);
                 if numel(listConfounds)>0; dispi('Found ', numel(listConfounds),' confound files that are deleted now', verbose); delete(listConfounds{:}); end
                 dispi('Using motion_outliers code from FSL for detecting artefacts', verbose)
-                bad_trs=motion_outliers(retinoNiftiFolder, 'epi*.nii*', '-p', fullfile(retinoNiftiFolder,'motion_params.png'), '--dvars', verbose);
+                bad_trs=motion_outliers(retinoNiftiFolder, 'ep*.nii*', '-p', fullfile(retinoNiftiFolder,'motion_params.png'), '--dvars', verbose);
                 dispi('Suspicious TR detected are:', verbose)
                 disp(bad_trs)
                 %TO DO HERE
@@ -423,7 +424,7 @@ try
              dispi(' --------------------  ',step, '. retino/epi: pRF model ------------------------------', verbose) 
              check_folder(retinoMrSessionFolder, 1, verbose);
 
-             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*ep*.nii*', 3, param, 1, verbose)
+             pRF_model(retinoMrSessionFolder, retinoMrNiftiDir, '*ep*.nii*', 3, param, @make8Bars, 1, verbose)
 
              dispi('Check success of pRF model', verbose)
              check_files(fullfile(retinoMrSessionFolder,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists
