@@ -5,10 +5,6 @@ function params = create_params(params, fields, values)
 % Inputs:
 % params - structure to set fields/values to (default is struct)
 % fields - cell array of fields to set in params structure 
-%   [default]:
-%     fields = {'mprage_dcm_dir','retino_dcm_dir','exp_dcm_dir',...
-%               'exp_par_dir','retino_n','exp_n','mprage_slc_n',...
-%               'retino_tr_n','exp_tr_n','pRF_dummy_n'};
 % values - cell array of values to be set in params structure
 %   [default]: @uigetdir for _dir, @str2double(inputdlg) for _n, @inputdlg otherwise
 %
