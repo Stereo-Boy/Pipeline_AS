@@ -30,7 +30,7 @@ check_folder(mr_dir, 1, verbose);
 
 % run mrVista
 cd(mr_dir);
-mrVista;
+%mrVista;
 
 % user-defined parameters:
 query = []; %should trigger volume, gray or flat coords calculation if missing

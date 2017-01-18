@@ -26,6 +26,7 @@ function [success, status] = remove_previous(varargin)
 % init vars
 if any(strncmp(varargin,'verbose',7)), 
     verbose = varargin(strncmp(varargin,'verbose',7));
+    if iscell('verbose'); verbose=verbose{1};end
     varargin(strcmp(varargin,verbose)) = [];
 else % default on
     verbose = 'verboseON';
@@ -48,14 +49,14 @@ if ~iscell(folder), folder = {folder}; end;
 
 % if folder exists, remove
 for x = 1:numel(folder),
-    if exist(folder{x},'dir')
+    if exist(folder{x},'dir')==7
        [success{x}, status{x}] = rmdir(folder{x},'s'); 
        if success{x}, % display folder removed
-           dispi(folder{x}, ' detected and removed', verbose);
+           dispi('[remove_previous] Following folder detected and removed: (',folder{x},').');
        else % warning/error
            warning_error(status{x}, err, verbose); 
        end
     else % display no folder
-        dispi(folder{x},' not detected',verbose)
+        dispi('[remove_previous] Following folder not detected: (',folder{x},').')
     end
 end

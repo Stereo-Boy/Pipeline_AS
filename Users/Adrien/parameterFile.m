@@ -1,5 +1,5 @@
-function o = expectedParametersForPipeline(verbose)
-%   o = expectedParametersForPipeline(verbose)
+function o=parameterFile(subj_dir)
+%   o = parameterFile
 % This function neesd to be present in a the root folder for the subject to 
 % be analysed with pipeline_JAS.m.
 % It should define basic expected parameters such as:
@@ -10,15 +10,24 @@ function o = expectedParametersForPipeline(verbose)
 % Written nov 2016 - Adrien Chopin
 % Justin-unapproved
 
-if exist('verbose', 'var')==0; verbose='verboseON'; end
+        % defines standard folders for each step 
+       o.mpr_dicom_dir = fullfile(subj_dir,'01a_mprage_DICOM');
+       o.mpr_ni_dir = fullfile(subj_dir,'02_mprage_nifti');
+       o.mpr_segm_dir = fullfile(subj_dir,'03_mprage_segmented');
+       o.mpr_niFixed_dir = fullfile(subj_dir,'04_mprage_nifti_fixed');
 
-% Checks that the called parameter file is the correct one
-if strcmp(cd, fileparts(which('expectedParametersForPipeline')))==1
-    dispi('Loading parameters found in file in root subject folder', verbose) 
-else
-   warning(['Parameter file not found  in root subject folder. Loading default: ', which('expectedParametersForPipeline')])
-   
-end
+       o.ret_dicom_dir = fullfile(subj_dir,'01b_epi_retino_DICOM');
+       o.ret_ni_dir = fullfile(subj_dir,'03_retino_nifti');
+       o.ret_mc_dir = fullfile(subj_dir,'04_retino_MC');
+       o.ret_mcFixed_dir = fullfile(subj_dir,'05_retino_nifti_fixed');
+       o.ret_mr_dir = fullfile(subj_dir,'06_retino_mrSession');
+       o.ret_mr_ni_dir=fullfile(o.ret_mr_dir,'nifti');
+       o.ret_mr_mesh_dir=fullfile(o.ret_mr_dir,'Mesh');
+        
+        %standard file names in vista session / nifti
+        o.gemsFile = 'gems_retino.nii.gz';
+        o.mprageFile = 'mprage_nu_RAS_NoRS.nii.gz';
+        
     o.mprageSliceNb = 160;  % nb of slices in the mprage scan
     
     o.retinoEpiNb = 6;      % nb of retinotopic epis
@@ -35,6 +44,8 @@ end
     
     o.expGemsNb = 1;      % nb of exp gems
     o.expGemsSliceNb = 38;  % nb of slices in the gems scan
+    
+    o.smoothingIterations = 300; %nb of iteration for smoothing when inflating mesh
     
     %pRF retino parameters
     o.analysis = struct('fieldSize',9.1,...
@@ -58,5 +69,4 @@ end
             'nOffBlock', 6.5,...
             'hrfType','two gammas (SPM style)',...
             'hrfParams',{{[1.68 3 2.05],[5.4 5.2 10.8 7.35 0.35]}});
-         
-end
+    

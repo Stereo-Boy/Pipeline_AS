@@ -1,9 +1,9 @@
-function [tf, nbFiles] = check_files(folder, expr, n, forceError, verbose)
-%  tf = check_files(folder, expr, n, forceError, verbose)
-% Check if number of files of certain expression exist.
+function [success, nbFiles] = check_files(folder, expr, n, forceError, verbose)
+% [success, nbFiles] = check_files(folder, expr, n, forceError, verbose)
+% Check if number of files of certain expression exist in folder.
 % 
 % Inputs:
-% folder: a directory in which the function will check the file existence
+% folder: a directory in which the function will check the file existence (default pwd)
 % expr: string expression of files to check
 % n: number of expected files
 % forceError = 1 (default 0): forces an error instead of a warning 
@@ -11,12 +11,12 @@ function [tf, nbFiles] = check_files(folder, expr, n, forceError, verbose)
 % (default verboseON)
 %
 % Outputs:
-% tf: boolean result of checking if number of files with expr matches n
+% success: boolean result of checking if number of files with expr matches n
 %
 % Example:
-% tf = check_files('*_mcf.nii*', 6)
+% success = check_files('*_mcf.nii*', 6)
 % 
-% tf =
+% success =
 % 
 %      1
 % 
@@ -24,15 +24,15 @@ function [tf, nbFiles] = check_files(folder, expr, n, forceError, verbose)
 % Edited by Adrien Chopin 11/2016
 
 % return number of files with expr == n
-if exist('verbose', 'var')==0; verbose='verboseON'; end
-if exist('forceError', 'var')==0; forceError=0; end
-if (~exist('folder','var')||~exist(folder, 'dir')), help(mfilename);erri('Missing folder'); end
+if ~exist('verbose', 'var'); verbose='verboseON'; end
+if ~exist('forceError', 'var'); forceError=0; end
+if ~exist('folder','var')||~exist(folder, 'dir'), help(mfilename);erri('Missing folder'); end
 if ~exist('expr','var'), expr='*.*';warni('check_files expr parameter missing - defaulting to all files in folder', verbose); end
 
 nbFiles=numel(dir(fullfile(folder,expr)));
-tf = (nbFiles == n);
+success = (nbFiles == n);
 
-if tf==1
+if success==1
     dispi(nbFiles,'/',n,' files correctly detected (', expr, ') in ', folder, verbose)
 else
     if forceError, erri('Nb of files is incorrect: (',expr,'): ', nbFiles,'/',n,' files detected in ', folder)

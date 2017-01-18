@@ -34,7 +34,7 @@ if nargin==0, return; end;
 
 % get verbose
 if any(strncmp(varargin,'verbose',7)),
-    verbose = varargin{strncmp(varargin,'verbose',7)};
+    verbose = varargin{strncmp(varargin,'verbose',7)};    verbose=verbose{1}; %otherwise does not work
     varargin(strcmp(varargin,verbose)) = [];
 else % default on
     verbose = 'verboseON';

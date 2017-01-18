@@ -1,53 +1,59 @@
-function fileOrFolder = check_folder(fileOrFolder, forceError, verbose)
-% checkFolder(fileOrFolder, forceError, verbose)
+function output = check_folder(folder, forceError, verbose)
+% output = checkFolder(folder, forceError, verbose)
 %
-% Checking whether the input is a file or folder or does not exist and returning the
-% file/folder name as an ouput. It issues a warning if it does not exist.
+% Checking whether the input is an existing folder(s) in the current pwd, and may create it otherwise without a warning. 
+% The input folder can be a list of folders in a cell array including empty cells
 %
-% forceError = 1 (default 0): forces an error instead of a warning 
+% forceError = 1 (default 0): forces an error and therefore does not creates the folder
 %
-% If the input does not exist and forceError is set to 0
-% (default), then it does attempt to create the folder. 
-%
-% verbose = verboseOFF, none of the disp function will give an ouput
-% (default verboseON)
-% ------------------------------------------------------------------------
+% verbose = verboseOFF, none of the disp function will give an ouput (default verboseON)
+% 
+% output is the existing or created folder(s)
+% ------------------------------------------------------------------------------------------------------------
 
-% ------------------------------------------------------------------------
-% Written Nov 2016
+% ------------------------------------------------------------------------------------------------------------
+% Written Nov 2016, re-adapted in Jan 2017
 % Adrien Chopin
-% -------------------------------------------------------------------------
+% -------------------------------------------------------------------------------------------------------------
 
-if exist('verbose', 'var')==0; verbose='verboseON'; end
-if exist('forceError', 'var')==0; forceError=0; end
+%default values
+if ~exist('verbose', 'var')|| isempty(verbose); verbose='verboseON'; end
+if ~exist('forceError', 'var') || isempty(forceError); forceError=0; end
+
+%determine number of cells in folder and creates an output template
+if iscell(folder); sizeF=numel(folder); else sizeF=1;  end
+output=cell(1,sizeF);
 
 %checks that input exists
-if exist('fileOrFolder', 'var')==0
+if ~exist('folder', 'var')
         help(mfilename);
-        warni('checkFolder needs an input', verbose)
+        warni('[check_folder] needs an input', verbose)
 else
-    %checks what it is
-    type=exist(fileOrFolder);
-    switch type
-        case {0} %not a file, not a folder
-            if forceError==1
-                erri([fileOrFolder, ' does not exist'])
-            else
-                warni([fileOrFolder, ' does not exist'], verbose)
-                dispi('check_folder will attempt to create folder: ', fileOrFolder, verbose)
-                [success,message]=mkdir(fileOrFolder);
-                if success; dispi('Created ', fileOrFolder); else warni('Could not create ', fileOrFolder, ' because: ', message, verbose);end    
+   if ~iscell(folder), folder = {folder};end; %transforms in a cell array so that we can parse it one cell after one
+   if numel(folder)==0;         dispi('[check_folder] Folder wass not created because it is an empty string.', verbose) ;    end
+   for ff = 1:numel(folder), 
+       currentFF = folder{ff};
+       if iscell(currentFF);   %if there is a cell array in the cell array, recursively apply the function
+                output{ff} = check_folder(currentFF, forceError, verbose);
+       else
+            %checks whether folder exists
+            if exist(currentFF,'dir'); %yes
+                dispi('[check_folder] confirms that the following folder exists: ', currentFF, verbose)
+                output{ff}=currentFF;
+            else  % not a folder
+                    if forceError==1
+                        erri('[check_folder] Folder does not exist: ',currentFF)
+                    else
+                        if isempty(currentFF)==0
+                            dispi('[check_folder] Folder does not exist so attemps to create it: ', currentFF, verbose)
+                            [success,message]=mkdir(currentFF);
+                            if success; dispi('[check_folder] Folder created');output{ff}=currentFF; else warni('Could not create folder because: ', message, verbose);end    
+                        else
+                            dispi('[check_folder] Folder was not created because it is an empty string.', verbose)  
+                        end
+                    end
             end
-        case {2, 3, 4, 5} %file
-            if forceError==1
-                erri([fileOrFolder, ' input is a file rather than a folder!'])
-            else
-                warni([fileOrFolder, ' input is a file rather than a folder!'], verbose)
-                dispi('check_folder will attempt to create folder ', fileOrFolder, verbose)
-                [success,message]=mkdir(fileOrFolder);
-                if success; dispi('Created ', fileOrFolder); else warni('Could not create ', fileOrFolder, ' because: ', message, verbose);end    
-            end
-        case {7} %folder
-            dispi('Folder exists:', fileOrFolder, verbose)
-    end
+       end
+   end
+   if numel(output)==1, output = output{1}; end;
 end
