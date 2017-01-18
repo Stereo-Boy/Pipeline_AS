@@ -101,13 +101,16 @@ for x = steps
     % get fields for previous steps and current step
     [~, fields] = local_getparams(params, 1:x-1, 'defaults');
     [~, newfields] = local_getparams(params, x, 'defaults');
-     
+    
     % append dir to subj_dir with local_fullfile
     dir_fields = regexp([fields, newfields],'.*_dir$','match');
     dir_fields = [dir_fields{:}];
     if ~isempty(dir_fields), % evaluate dir_fields in current context
         if ~iscell(dir_fields), dir_fields = {dir_fields}; end;
-        cellfun(@(x)assignin('caller',x,local_fullfile(subj_dir,eval(x))),dir_fields);
+        for n = 1:numel(dir_fields),
+            tmp = local_fullfile(subj_dir,eval(dir_fields{n}));
+            eval([dir_fields{n} '= tmp;']);
+        end
     end
     
     % check fields prior to step
@@ -191,7 +194,7 @@ for x = steps
             % set outputs
             params.outputs{x} = get_dir(mc_dir,mc_expr);
         case 8 % motion outliers
-            params.outputs{x} = motion_outliers(mc_dir,mc_expr,'--nomoco','--dvars');
+            params.outputs{x} = motion_outliers(mc_dir,mc_expr,mo_args{:});
             dispi('Outliers:\n', params.outputs{x}, verbose);
         case 9 % initialization of mrVista session
             % get gems, mprage
@@ -285,8 +288,8 @@ for x = steps,
             values = cat(2, values, {'niftiFix','epi*.nii*','MoCo','*_mcf.nii*',...
                 'reffile','nifti','epi*.nii*',1,{'-plots','-report','-cost mutualinfo','-smooth 16'}});
         case 8 % motion outliers
-            fields = cat(2, fields, {'mc_dir','mc_expr'});
-            values = cat(2, values, {'MoCo','*_mcf.nii*'});
+            fields = cat(2, fields, {'mc_dir','mc_expr','mo_args'});
+            values = cat(2, values, {'MoCo','*_mcf.nii*',{'--nomoco','--dvars'}});
         case 9 % initialization of mrVista session
             fields = cat(2, fields, {'nifix_dir','seg_dir','mc_dir','epi_expr',...
                 'mr_dir','vol_expr','gems_expr'});
@@ -302,7 +305,7 @@ for x = steps,
             values = cat(2, values, {'mrVista_Session','Segmentation','niftiFix'});
         case 12 % mesh creation
             fields = cat(2, fields, {'seg_dir','t1_expr','mr_dir','mesh_dir','iter_n','gray_n'});
-            values = cat(2, values, {'Segmentation','*t1_class_edited*.nii*','mrVista_Session','Mesh',600,0});
+            values = cat(2, values, {'Segmentation','*t1_class_edited*.nii*','mrVista_Session','Mesh',600,3});
         case 13 % pRF model
             fields = cat(2, fields, {'mr_dir','mc_dir','mc_expr','prf_type','prf_params','stim_fun'});
             values = cat(2, values, {'mrVista_Session','MoCo','*_mcf.nii*',3,[],@make8Bars});
