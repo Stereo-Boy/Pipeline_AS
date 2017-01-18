@@ -1,6 +1,6 @@
-function output = get_dir(fld, expr, n)
+function [output, nn] = get_dir(fld, expr, n)
 % output = get_dir(fld, expr, n)
-% Get n number of files/folders from fullfile(fld, expr) using dir
+% Get all or n number of files/folders, or n_th file from fullfile(fld, expr) using dir
 %
 % Inputs:
 % fld: string path to directory to search within (default is pwd)
@@ -12,6 +12,7 @@ function output = get_dir(fld, expr, n)
 %
 % Outputs:
 % output: cell array of fullpath files/folders returned from call to dir 
+% nn: number of returned files or folders
 %
 % Example:
 % save('test.txt'); save('test2.txt'); mkdir('testfld');
@@ -66,3 +67,4 @@ output = fullfile(fld, {d.name});
 % output number of files/folders
 if ~isempty(n), output = output(n); end;
 if numel(n)==1, output = output{1}; end;
+if iscell(output); nn = numel(output); else nn = 1; end
