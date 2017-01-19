@@ -107,13 +107,8 @@ try
         %   10  11       12                        13                        14   
  
        %here is where optionalArg may be loaded to the variable it may replace
-        reference=optionalArg;
-                % reference values:
-                % 1. gems downsampled at epi resolution
-                % 2. gems at original resolution - epi will be upsampled to gems resolution 
-                % 3. first epi, first TR - gems is uncorrected
-                % 4. first epi, first TR - gems is corrected   
-    
+            % a = optionalArg;
+            
     dispi(' --------------------------  End of pipeline initialization  ----------------------------------------', verbose)
     
 % ---------- PIPELINE STEPS --------------------------------------------------------------------------------------------------
@@ -126,26 +121,27 @@ try
         check_folder(foldersByStep{step}, 0, verbose);
         switch step
             case {1}   %   1. mprage: nifti conversion
-                dispi(' Description of the step ',step, ': Nifti conversion with dcm2niix from ',mpr_dicom_dir, ' to ', mpr_ni_dir, verbose)
+                dispi(repmat('*',1,20),' Description of the step ',step, ': Nifti conversion with dcm2niix from ',mpr_dicom_dir, ' to ', mpr_ni_dir, verbose)
                 dispi('DICOM mprage files should be in a folder itself in a folder called ',mpr_dicom_dir, ' in the subject folder',verbose)
                 checkSourceFolders(mpr_dicom_dir, verbose)
                 dcm2niiConvert(mpr_dicom_dir, '*/', 1, mprageSliceNb, mpr_ni_dir, verbose)    %at the moment, only works with one mprage folder     
                     
            case {2}        %  2. mprage: segmentation using FSL
-                 dispi(' Description of the step ',step, ': FSL segmentation from ',mpr_ni_dir, ' to ', mpr_segm_dir, verbose)
+                 dispi(repmat('*',1,20),' Description of the step ',step, ': FSL segmentation from ',mpr_ni_dir, ' to ', mpr_segm_dir, verbose)
                  checkSourceFolders(mpr_ni_dir, verbose)
                  check_files(mpr_ni_dir,'*mprage*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
                  segmentation(subjID, mpr_ni_dir,mpr_segm_dir, verbose);                 %outputs{step} = get_dir(mpr_ni_dir,'t1_class.nii.gz');
                  
            case {3}    %   3. mprage: correction of gray mesh irregularities
-                dispi(' Description of the step ',step, '. Mprage: checking for correction of gray mesh irregularities', verbose)
+                dispi(repmat('*',1,20),' Description of the step ',step, '. Mprage: checking for correction of gray mesh irregularities', verbose)
                 dispi(' This step has to be done manually on a Windows computer with itkGray/itkSnap', verbose)
                 dispi(' Edited class file should contain the word (edited) in a folder called: ',mpr_segm_dir,verbose); 
                 checkSourceFolders(mpr_segm_dir, verbose)
                 check_files(mpr_segm_dir,'*edited*.nii.gz', 1, 1, verbose); %looking for 1 edited nifti file
                 
            case {4}        %   4. mprage: fix nifti header
-               dispi(' Description of the step ',step, ': Repair of mprage nifti headers from ',mpr_segm_dir, ' to ', mpr_niFixed_dir, verbose)
+               dispi(repmat('*',1,20),' Description of the step ',step, ': Repair of mprage nifti headers from ',mpr_segm_dir, ' to ', mpr_niFixed_dir, verbose)
+               if nifti_fix_skip; warni('This step should be skipped because nifti_fix_skip = 1 but we proceed anyway', verbose); end
                checkSourceFolders(mpr_segm_dir, verbose)
                expr = '*nu_RAS_NoRS*.nii*'; %expression to select isometric mprage file
                check_files(mpr_segm_dir,expr, 1, 1, verbose); %looking for 1 mprage file
@@ -155,7 +151,7 @@ try
                check_files(mpr_niFixed_dir,'headers_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called headers_FIXED
                
             case {5}     %   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames
-                dispi(' Description of the step ',step, ': retino epi/gems: nifti conversion and removal of pRF dummy frames', verbose)
+                dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: nifti conversion and removal of pRF dummy frames', verbose)
                 dispi('For each epi and gems, DICOM should be in separate folders inside ',ret_dicom_dir, ' in the subject folder',verbose)
                 dispi('Each epi folder should contain the word epi or gems.', verbose)
                 checkSourceFolders(ret_dicom_dir, verbose)
@@ -167,7 +163,7 @@ try
                 for i=1:numel(list_ni_epis); remove_frames(list_ni_epis{i}, pRFdummyFramesNb, verbose);    end  
                  
             case {6}    %   6. retino epi/gems: motion correction 
-                dispi(' Description of the step ',step, ': retino epi/gems: motion correction from ',ret_ni_dir, ' to  ', ret_mc_dir,'---', verbose)
+                dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: motion correction from ',ret_ni_dir, ' to  ', ret_mc_dir,'---', verbose)
                 checkSourceFolders(ret_ni_dir, verbose)
 
                 copy_files(ret_ni_dir, '*.nii.gz', ret_mc_dir, verbose) %copy all nifti files to MC folder
@@ -179,12 +175,14 @@ try
 %                 motion_correction(ret_mc_dir, '*gems*.nii.gz', 'reffile',fullfile(ret_mc_dir,'ref_vol.nii.gz'),1) %motion correct the gems second, using the same 
                 
                 % reference values:
-                % 1. gems downsampled at epi resolution
-                % 2. gems at original resolution - epi will be upsampled to gems resolution 
+                % 1. gems downsampled at epi resolution - gems is corrected
+                % 2. gems at original resolution - epi will be upsampled to gems resolution - gems is corrected
                 % 3. first epi, first TR - gems is uncorrected
-                % 4. first epi, first TR - gems is corrected
-                exprMC='*epi*.nii.gz';
+                % 4. first epi, first TR - gems is corrected  
+                % 5. first epi, middle TR - gems is uncorrected
+                exprMC='*epi*.nii*';
                 nExpectedMCfiles=nbFiles-1; %should be nb of epi -1 bc we do not correct our gems
+                refTR=1;
                 switch reference
                     case {1}
                         dispi('Ref1: We want mcFLIRT to motion correct the epis to the downsampled resolution GEMS') 
@@ -210,11 +208,17 @@ try
                         gems = list_files(ret_mc_dir, '*gems*.nii.gz', 1); %find its name before MC files arrive for later upsampling
                         refFile= epis{1};
                         exprMC='*.nii.gz';
-                        nExpectedMCfiles=nbFiles; 
+                        nExpectedMCfiles=nbFiles;
+                   case {5} % 5. first epi, middle TR - gems is uncorrected 
+                        dispi('Ref5: We want mcFLIRT to motion correct the epis to the middle TR of the first epi') 
+                        dispi('In that version, GEMS remains unaligned')
+                        epis = list_files(ret_mc_dir, '*epi*.nii.gz', 1);
+                        refFile= epis{1};
+                        refTR=[];
                 end                    
                 %motion correct the epi to the higher resolution gems (as a ref file)
                 dispi('Motion-correcting all epis to the following reference file: ', refFile, verbose);
-                motion_correction(ret_mc_dir, exprMC, {'reffile', refFile, 1}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
+                motion_correction(ret_mc_dir, exprMC, {'reffile', refFile, refTR}, '-plots','-report','-cost mutualinfo','-smooth 16',verbose) 
                 if reference==4; dispi('Upsampling the MC gems back to its original resolution',verbose);
                     mcf_gems = list_files(ret_mc_dir, '*gems*mcf*.nii.gz', 1);
                     fslresample(mcf_gems{1},mcf_gems{1}, '-ref', gems{1}, verbose);
@@ -224,7 +228,7 @@ try
                 check_files(ret_mc_dir,'*_mcf.par', nExpectedMCfiles, 1, verbose);
                  
           case {7}   %   7. retino epi: MC parameter check and artefact removal
-                dispi(' Description of the step ',step, ': retino epi: MC parameter check and artefact removal from ',ret_ni_dir,'---', verbose)               
+                dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi: MC parameter check and artefact removal from ',ret_ni_dir,'---', verbose)               
                 %bad_trs = motion_parameters(ret_mc_dir);   %dispi('Suspicious TR detected     EPI   TR', verbose);  %disp(bad_trs)
                 checkSourceFolders(ret_ni_dir, verbose)
                 dispi('Removing potential previous confound files for motion parameters')
@@ -237,7 +241,8 @@ try
                 % TO DO HERE:  Let's move all confounds files and images to a different folder for clarity  
                 
           case {8} % 8. retino epi/gems: nifti header repair
-               dispi(' Description of the step ',step, ': Repair of epi/gems nifti headers from ',ret_mc_dir,' to ',ret_mcFixed_dir, verbose)
+               dispi(repmat('*',1,20),' Description of the step ',step, ': Repair of epi/gems nifti headers from ',ret_mc_dir,' to ',ret_mcFixed_dir, verbose)
+               if nifti_fix_skip; warni('This step should be skipped because nifti_fix_skip = 1 but we proceed anyway', verbose); end
                checkSourceFolders(ret_mc_dir, verbose)
                % fix epi first
                exprEPI = '*epi*mcf.nii*'; %expression to select epi files
@@ -256,11 +261,13 @@ try
                check_files(ret_mcFixed_dir,'headers_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called headers_FIXED
   
          case {9}  %   9. retino epi/gems: initialization of mrVista session
-                dispi(' Description of the step ',step, ': retino epi/gems: initialization of mrVista session ------------------------------', verbose) 
+                dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: initialization of mrVista session ------------------------------', verbose) 
                 checkSourceFolders({ret_mcFixed_dir,mpr_niFixed_dir}, verbose)
-                dispi('Check that headers are corrected')
-                check_files(mpr_niFixed_dir,'headers_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called headers_FIXED
-                check_files(ret_mcFixed_dir,'headers_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called headers_FIXED
+                if nifti_fix_skip==0
+                    dispi('Check that headers are corrected')
+                    check_files(mpr_niFixed_dir,'headers_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called headers_FIXED
+                    check_files(ret_mcFixed_dir,'headers_FIXED.txt', 1, 1, verbose); %looking for 1 txt file called headers_FIXED
+                end
                 check_folder(ret_mr_ni_dir, 0, verbose); %will be created
                 copy_files(ret_mcFixed_dir, '*epi*mcf*.nii.gz', ret_mr_ni_dir, verbose) %copy mcf nifti fixed epi to nifti mrvista folder
                 check_files(ret_mcFixed_dir,'*gems*.nii.gz', 1, 1, verbose); %looking for only 1 gems file there (otherwise there is room for errors)
@@ -273,7 +280,7 @@ try
                 %alternative: kb_initializeVista2_retino(ret_mr_dir, subjID)
                 
          case {10}  %   10. retino epi/gems: alignment of inplane and volume
-                dispi(' Description of the step ',step, ': retino epi/gems: alignment of inplane and volume  ------------------------------', verbose) 
+                dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: alignment of inplane and volume  ------------------------------', verbose) 
                 ipath_dir = get_dir(ret_dicom_dir, '*gems*/', 1); %this one it the DICOM GEMS folder
                 checkSourceFolders({ret_mr_dir,ret_dicom_dir,ret_mr_ni_dir,ipath_dir}, verbose)
                 if reference==4; dispi('Warning: here we have motion-correct the GEMS file to the first EPI so that the ipath to the GEMS dicom folder is incorrect', verbose);
@@ -285,11 +292,11 @@ try
                 [averageCorr, sumRMSE]=extractAlignmentPerfStats(ret_mr_dir, retinoGemsSliceNb, verbose);
                  
          case {11}  %   11. retino epi: segmentation installation
-             dispi(' Description of the step ',step, ': retino epi/gems: install of segmentation  ------------------------------', verbose) 
+             dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: install of segmentation  ------------------------------', verbose) 
              install_segmentation(ret_mr_dir, mpr_segm_dir, ret_mr_ni_dir, verbose)
                
         case {12}  %   12. retino/epi: mesh creation
-             dispi(' Description of the step ',step, ': retino/epi: mesh creation / inflating ------------------------------', verbose) 
+             dispi(repmat('*',1,20),' Description of the step ',step, ': retino/epi: mesh creation / inflating ------------------------------', verbose) 
              initialPath=cd;             cd(ret_mr_dir);
              checkSourceFolders(ret_mr_dir, verbose)
              t1file = get_dir(mpr_segm_dir, '*edited*.nii*', 1);
@@ -303,7 +310,7 @@ try
              cd(initialPath);
   
          case {13}  %  13. retino epi: pRF model
-             dispi(' Description of the step ',step, ': retino/epi: pRF model ------------------------------', verbose) 
+             dispi(repmat('*',1,20),' Description of the step ',step, ': retino/epi: pRF model ------------------------------', verbose) 
              checkSourceFolders(ret_mr_dir, verbose)
 
              pRF_model(ret_mr_dir, ret_mr_ni_dir, '*epi*.nii*', 3, param, @make8Bars, 1, verbose)
@@ -312,7 +319,7 @@ try
              check_files(fullfile(ret_mr_dir,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists
  
         case {14} %   14. retino epi: mesh visualization of pRF values
-            dispi(' Description of the step ',step, ': retino epi: mesh visualization of pRF values ------------------------------', verbose)
+            dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi: mesh visualization of pRF values ------------------------------', verbose)
             checkSourceFolders({ret_mr_dir,ret_mr_mesh_dir}, verbose)
             dispi('Check that pRF model was run', verbose)
             check_files(fullfile(ret_mr_dir,'Gray/Averages'), '*fFit*', 1, verbose); %check that retino model exists

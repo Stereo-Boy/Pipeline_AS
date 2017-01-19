@@ -4,16 +4,18 @@ function copy_files(source,expr,destination,verbose)
 % destination (default cd) and report it or not depending whether verbose is verboseON or verboseOFF
 % destination needs to be a fullfile absolute path!!
 
-if exist('verbose', 'var')==0; verbose='verboseON'; end
-if exist('source', 'var')==0; warni('copyFiles: no source folder - defaulting to cd', verbose); source=cd; end
-if exist('destination', 'var')==0; warni('copyFiles: no destination folder - defaulting to cd', verbose); destination=cd; end
-if ~exist('expr','var'), expr='*.*';warni('copyFiles: expr parameter missing - defaulting to all files in folder', verbose); end
+if ~exist('verbose', 'var')||isempty(verbose); verbose='verboseON'; end
+if ~exist('source', 'var')||isempty(source); warni('[copyfiles] no source folder - defaulting to cd', verbose); source=cd; end
+if ~exist('destination', 'var')||isempty(destination); warni('[copyfiles] no destination folder - defaulting to cd', verbose); destination=cd; end
+if ~exist('expr','var')||isempty(expr); expr='*.*';warni('[copyfiles] expr parameter missing - defaulting to all files in folder', verbose); end
 
 
-files=dir(fullfile(source,expr));
+%files=dir(fullfile(source,expr));
+[files, nn]=get_dir(source, expr);
+
 successTotal=0;
-for i=1:numel(files)
-   [success,message]=copyfile(fullfile(source, files(i).name), destination); 
-    if success==1, successTotal=successTotal+1; else dispi(message,verbose), end     
+for i=1:nn %here
+   [success,message]=copyfile(files{i}, destination); 
+    if success==1, successTotal=successTotal+1; else warni(message,verbose), end     
 end
-dispi('copyfiles: moved ', successTotal, '/',numel(files),' files from ', source, ' to ', destination, verbose) 
+dispi('[copyfiles] Copied ', successTotal, '/',nn,' files from ', source, ' to ', destination, verbose) 

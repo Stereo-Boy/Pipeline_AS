@@ -21,7 +21,7 @@ function motion_correction(mc_dir, expr, type, varargin)
 % *_mcf.nii.gz files are the motion corrected files
 % *_mcf.par files contain the motion parameters
 % 
-% Example 1: motion correct all files in pwd using epi03 as reference
+% Example 1: motion correct all files in pwd using epi03 (default to middle TR bc no 3d arg in the {}) as reference
 % motion_correction(pwd, [], {'reffile', 'epi03_retino_14.nii.gz'})
 %
 % Example 2: motion correct epi nifti files to the middle vol of each input file
@@ -51,7 +51,7 @@ if isempty(varargin), fsl_arg = ''; end;
 
 % get verbose
 if any(strncmp(varargin,'verbose',7)),
-    verbose = varargin{strncmp(varargin,'verbose',7)};
+    verbose = varargin{strncmp(varargin,'verbose',7)}; if iscell(verbose); verbose=verbose{1}; end%otherwise does not work
     varargin(strcmp(varargin,verbose)) = [];
 else % default on
     verbose = 'verboseON';
@@ -69,13 +69,15 @@ files = fullfile(mc_dir,{d.name});
 switch type{1}
     case 'reffile'
         if numel(type)==1, % default takes the middle epi
+            dispi('Using middle epi as a reference (default)',verbose)
             n_file = round(numel(files) / 2);
             ni = readFileNifti(files{n_file});
         else % load from varargin{1}
             ni = readFileNifti(type{2});
         end
         % if no second arg, default is TR n/2
-        if numel(type) < 3,
+        if numel(type) < 3 || isempty(type{3}),
+            dispi('Using middle TR as a reference (default)',verbose)
             n_vol = round(ni.dim(end) / 2);
         else % otherwise set to varargin{2}
             n_vol = type{3};
