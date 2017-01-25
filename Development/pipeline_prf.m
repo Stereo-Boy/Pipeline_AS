@@ -2,7 +2,7 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 % params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'], ['errorON'])
 % 
 % Inputs:
-% steps - number or numberic array of steps to run (default is 1:16, see below)
+% steps - number or numberic array of steps to run (default is 0, see below)
 % subj_dir - string subject directory (default is pwd)
 % subjID - string subject id (default is '')
 % params - structure containing fields used as variables in the pipeline;
@@ -13,7 +13,7 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 %
 % Outputs: 
 % params - structure containing fields used as variables in the pipeline
-% params.output{step} will contain any outputs from each step run
+% params.outputs{step} will contain any outputs from each step run
 %
 % Steps available to run:
 %   0.  All of the below steps
@@ -30,9 +30,6 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 %   11. segmentation installation
 %   12. mesh creation
 %   13. pRF model
-%   14. mesh visualization of pRF values
-%   15. extraction of flat projections
-%   16. exp epi: actual GLM model
 %
 % Written Nov 2016
 % Justin Theiss and Adrien Chopin
@@ -40,26 +37,38 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 % From the work made by Eunice Yang, Rachel Denison, Kelly Byrne, Summer
 % Sheremata
 
-% init vars
+% if no inputs, return and display all defaults
 if nargin==0, 
     help(mfilename); 
-    % get default params
-    params = local_getparams(struct, 1:15, 'defaults'); 
-    fields = fieldnames(params); values = struct2cell(params);
+    % display default params
     disp('Default params:');
-    cellfun(@(x,y)dispi('    ', x, ': ', y), fields, values);
+    for x = 1:16,
+        clear params fields values;
+        dispi('Step ', x);
+        params = local_getparams(struct, x, 'defaults'); 
+        fields = fieldnames(params); values = struct2cell(params);
+        cellfun(@(x,y)dispi(' ', x, ': ', y), fields, values);
+    end
+    % return all defaults
+    params = local_getparams(struct, 0, 'defaults');
     return; 
-end;
+end
+
 % if steps==0, set to all
 if ~exist('steps','var')||all(steps==0), steps = 1:16; end;
-if ~exist('params','var')||isempty(params), % set params if none
+if ~exist('params','var')||isempty(params), % set params and return if none
     params = local_getparams(struct, steps, 'set'); 
-elseif ischar(params), % load params if char
+    params = local_getparams(params, steps, 'defaults');
+    return;
+elseif ischar(params) && exist(params,'file'), % load params if char and file
     load(params);
-end; % set notes_dir, verbose, err
+end
+
+% set notes_dir, verbose, err
 if ~exist('notes_dir','var')||isempty(notes_dir), notes_dir = ''; end;
-if ~any(strcmp(varargin,'verboseOFF')), verbose = 'verboseON'; end;
-if ~any(strcmp(varargin,'errorON')), err = 'errorOFF'; end;
+if ~any(strcmp(varargin,'verboseOFF')), verbose = 'verboseON'; else verbose = 'verboseOFF'; end;
+if ~any(strcmp(varargin,'errorON')), err = 'errorOFF'; else err = 'errorON'; end;
+if ~any(strcmp(varargin,'overwrite')), overwrite = false; else overwrite = true; end;
 
 % get defaults from params based on steps
 params = local_getparams(params, steps, 'defaults');
@@ -72,7 +81,6 @@ cellfun(@(x,y)assignin('caller', x, y), fields(:), values(:));
 % set outputs in params
 if ~isfield(params,'outputs'), params.outputs = cell(max(steps),1); end;
 if ~iscell(params.outputs), params.outputs = {params.outputs}; end;
-params.outputs(steps) = {[]};
 
 % init subj_dir, subjID
 if ~exist('subj_dir','var')||isempty(subj_dir), subj_dir = pwd; end;
@@ -98,35 +106,33 @@ for x = steps
     % display step
     dispi(repmat('-',1,20),'Running step ', x,repmat('-',1,20),verbose);
     
-    % get fields for previous steps and current step
-    [~, fields] = local_getparams(params, 1:x-1, 'defaults');
-    [~, newfields] = local_getparams(params, x, 'defaults');
+    % get fields and values for current step
+    [~, fields] = local_getparams(params, x, 'defaults');
     
     % append dir to subj_dir with local_fullfile
-    dir_fields = regexp([fields, newfields],'.*_dir$','match');
-    dir_fields = [dir_fields{:}];
-    if ~isempty(dir_fields), % evaluate dir_fields in current context
-        if ~iscell(dir_fields), dir_fields = {dir_fields}; end;
-        for n = 1:numel(dir_fields),
-            tmp = local_fullfile(subj_dir,eval(dir_fields{n}));
-            eval([dir_fields{n} '= tmp;']);
+    dir_idx = ~cellfun('isempty',regexp(fields,'.*_dir$'));
+    if any(dir_idx), % set directors to values in current context
+        for n = find(dir_idx)
+            tmp = local_fullfile(subj_dir,eval(fields{n}));
+            eval([fields{n} '= tmp;']);
         end
+    end
+    
+    % delete previous outputs if overwriting
+    if overwrite && numel(params.outputs) >= x,
+        remove_dir(params.outputs{x}, 's', verbose);
     end
     
     % check fields prior to step
     local_stepchecks(fields, err, verbose);
-    % check fields for current step
-    local_stepchecks(newfields, verbose);
     
     % switch step
     switch x
         case 1 % nifti conversion
             % get dcm dirs
             dcm_dirs = get_dir(dcm_dir,dcm_expr); 
-            % run dcm2niix
-            loop_system('dcm2niix','-z y','-f %f','-o',ni_dir,dcm_dirs(:),verbose);
-            % set outputs
-            params.outputs{x} = fullfile(ni_dir,strcat(dcm_dirs,'.nii.gz'));
+            % run nifti_convert
+            params.outputs{x} = nifti_convert(dcm_dirs,'-o',ni_dir,dcm_args{:},verbose);
         case 2 % segmentation using freesurfer
             segmentation(subjID,ni_dir,seg_dir,verbose);
             % set outputs
@@ -202,14 +208,14 @@ for x = steps
             mprage = get_dir(seg_dir,vol_expr,1);
             % init session
             close all;
-            init_session(mr_dir,mc_dir,'inplane',gems,'functionals',epi_expr,...
+            init_session(mr_dir,mc_dir,'inplane',gems,'functionals',mc_expr,...
                 'vAnatomy',mprage,'sessionDir',mr_dir,'subject',subjID);
             % set outputs
             params.outputs{x} = get_dir(mr_dir,'mr*.mat');
         case 10 % alignment of inplane and volume
             % get gems, mprage, ipath
             ref = get_dir(nifix_dir,gems_expr,1);
-            vol = get_dir(vol_dir,vol_expr,1);
+            vol = get_dir(seg_dir,vol_expr,1);
             ipath = get_dir(dcm_dir,i_expr,1);
             % run alignment
             xform = alignment(mr_dir,vol,ref,ipath,align_n);
@@ -265,8 +271,8 @@ fields = {}; values = {};
 for x = steps,
     switch x,
         case 1 % nifti conversion
-            fields = cat(2, fields, {'dcm_dir','dcm_expr','ni_dir'}); 
-            values = cat(2, values, {'Raw_DICOM', '*/', 'nifti'});
+            fields = cat(2, fields, {'dcm_dir','dcm_expr','dcm_args','ni_dir'}); 
+            values = cat(2, values, {'Raw_DICOM', '*/', {'-f','%f'}, 'nifti'});
         case 2 % segmentation using freesurfer
             fields = cat(2, fields, {'ni_dir','seg_dir'});
             values = cat(2, values, {'nifti','Segmentation'});
@@ -296,7 +302,7 @@ for x = steps,
             values = cat(2, values, {'niftiFix','Segmentation','MoCo','epi*_mcf.nii*',...
                 'mrVista_Session','*nu_RAS*.nii*','gems*.nii*'});
         case 10 % alignment of inplane and volume
-            fields = cat(2, fields, {'nifix_dir','gems_expr','vol_dir','vol_expr',...
+            fields = cat(2, fields, {'nifix_dir','gems_expr','seg_dir','vol_expr',...
                 'dcm_dir','i_expr','mr_dir','ref_slc_n','align_n'});
             values = cat(2, values, {'niftiFix','gems*.nii*','Segmentation','*nu_RAS*.nii*',...
                 'Raw_DICOM','gems*','mrVista_Session',24,1:5});
@@ -312,26 +318,24 @@ for x = steps,
         case 14 % mesh visualization of pRF values
             fields = cat(2, fields, {});
             values = cat(2, values, {});
-        case 15 % extraction of flat projections
-            fields = cat(2, fields, {});
-            values = cat(2, values, {});
-        case 16 % exp epi: actual GLM model
-            fields = cat(2, fields, {});
-            values = cat(2, values, {});
     end 
 end
 % get fields from params
 user_fields = fieldnames(params);
 % determine fields to set
 def_fields = fields;
+def_values = values;
+values = values(~ismember(fields(:), user_fields(:)));
 fields = fields(~ismember(fields(:), user_fields(:))); 
 % set values to default fields
 if strcmp(type,'set'), 
+    fields = unique(fields);
     params = create_params(params, fields);
-elseif strcmp(type,'defaults') % return default params
+elseif strcmp(type,'defaults'), % return default params
     params = create_params(params, fields, values);
-    % return default fields
+    % return default fields/values
     fields = def_fields;
+    values = def_values;
 end
 end
 
