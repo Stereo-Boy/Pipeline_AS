@@ -42,6 +42,9 @@ else % verboseOFF and remove
     varargin(strncmp(varargin,'verbose',7)) = [];
 end
 
+% display inputs
+dispi(mfilename,'\nfld: ',fld,'\nvarargin: ',varargin{:},verbose);
+
 % get out directories
 if ~any(strcmp(varargin,'-o')),
     out_dir = fld;
