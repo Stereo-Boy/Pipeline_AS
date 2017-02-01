@@ -339,7 +339,7 @@ try
             vol = meshLoad(vol, fullfile(ret_mr_mesh_dir,'lh_inflated.mat'), 1); %Gray | Surface Mesh | Load and Display
             %input('Press a key when server ready')
             vol = meshColorOverlay(vol); %Gray | update mesh
-            input('Press a key to quit and close visualization')
+           % input('Press a key to quit and close visualization')
             close_mesh_server(verbose);
             [meanvarexp, nbVarSupx] = getAverageModelAccuracy(retinoModelFile{1},10,verbose);
             cd(curdir)

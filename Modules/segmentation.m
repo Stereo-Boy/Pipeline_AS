@@ -55,10 +55,12 @@ loop_system('recon-all','-i',mprage_file,'-subjid',subjID,'-all',verbose);
 check_exist(fullfile(fs_subjdir,'mri'), 'ribbon.mgz', 1, verbose, 'errorON');
 
 % MGZ TO NII CONVERSION
-if ~check_exist(seg_dir,[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose),
+if ~exist(fullfile(seg_dir,[subjID,'_nu_RAS_NoRS.nii.gz']),'file'),
     dispi(repmat('-',1,10),'Starting conversion of mgz files to nifti',repmat('-',1,10),verbose);
     % convert mgz file to nifti
     loop_system('mgz2niiOrNoRS.sh',subjID,'RAS');
+else
+    warni('The nu_RAS_NoRS.nii.gz file was already found in the segmentation folder, so we have not generated it...')
 end
 
 % SET UP FOR ITKGRAY (converts freesurfer segmentation values to ITK values)
@@ -66,12 +68,14 @@ check_exist(seg_dir,[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose,'errorON');
 dispi('Setting up files for itkGray', verbose);
 dispi('Starting fs_ribbon2itk to convert nifti file to itkGray class file', verbose);
 % check for t1_class file, otherwise run fs_ribbon2itk
-if ~check_exist(seg_dir,'t1_class.nii.gz',1,verbose)
+if ~exist(fulfile(seg_dir,'t1_class.nii.gz'),'file')
     % run fs_ribbon2itk
     fs_ribbon2itk(subjID);
     % copy file to seg_dir
-    disi('Copying t1_class.nii.gz to ', seg_dir, verbose);
-    copyfile(fullfile(fs_dir,subjID,'mri','t1_class.nii.gz'), seg_dir);
+    dispi('Copying t1_class.nii.gz to ', seg_dir, verbose);
+    copyfile(fullfile(fs_subjdir,'mri','t1_class.nii.gz'), seg_dir);
+else
+    warni('The t1_class.nii.gz file was already found in the segmentation folder, so we have not generated it...')
 end % check again for t1_class file
 check_exist(seg_dir,'t1_class.nii.gz',1,verbose,'errorON');
 
