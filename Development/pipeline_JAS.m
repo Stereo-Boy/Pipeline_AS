@@ -126,8 +126,8 @@ try
                 checkSourceFolders(mpr_dicom_dir, verbose)
                 dcm2niiConvert(mpr_dicom_dir, '*/', 1, mprageSliceNb, mpr_ni_dir, verbose)    %at the moment, only works with one mprage folder     
                     
-           case {2}        %  2. mprage: segmentation using FSL
-                 dispi(repmat('*',1,20),' Description of the step ',step, ': FSL segmentation from ',mpr_ni_dir, ' to ', mpr_segm_dir, verbose)
+           case {2}        %  2. mprage: segmentation using Freesurfer
+                 dispi(repmat('*',1,20),' Description of the step ',step, ': Freesurfer segmentation from ',mpr_ni_dir, ' to ', mpr_segm_dir, verbose)
                  checkSourceFolders(mpr_ni_dir, verbose)
                  check_files(mpr_ni_dir,'*mprage*.nii.gz', 1, 1, verbose); %looking for 1 mprage nifti file
                  segmentation(subjID, mpr_ni_dir,mpr_segm_dir, verbose);                 %outputs{step} = get_dir(mpr_ni_dir,'t1_class.nii.gz');
