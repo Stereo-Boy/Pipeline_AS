@@ -32,33 +32,65 @@ end
 if ~iscell(values), values = {values}; end;
 
 % set each field, value
-for x = 1:numel(fields), params.(fields{x}) = values{x}; end;
+for x = 1:numel(fields),
+    if nargin==3 || iscell(values{x}) || ~any(isnan(values{x})),
+        params.(fields{x}) = values{x}; 
+    end
+end
 end
 
-% input function for defaults
+% input value for field
 function value = input_values(params, field)
     % init defaults
     if ~isfield(params, field)||isempty(params.(field)), 
-        if any(regexp(field,'_dir$')), % uigetdir
-            value = pwd; 
-        elseif any(regexp(field,'_n$')) % str2double
-            value = [];
-        else % inputdlg
-            value = '';
-        end
+        value = '';
     else % set value
         value = params.(field);
     end
     % return value using uigetdir/inputdlg
     if any(regexp(field,'_dir$')), % uigetdir folder
-        value = uigetdir(value, ['Choose ', field, ' directory']);
-        if ~any(value), value = []; end;
+        value = local_setfun('uigetdir', field, value);
+        if ~any(value), value = nan; end;
     elseif any(regexp(field,'_n$')), % inputdlg number
-        value = str2double(cell2mat(inputdlg(['Enter number for ',field],...
-            '',1,{num2str(value)})));
-        % set value to 0 if nan
-        if isnan(value), value = []; end;
+        value = local_setfun('str2double', field, value);
+    elseif any(regexp(field,'_args$')), % cellfun inputdlg
+        value = local_setfun('cell', field, value);
+        if isempty(value), value = nan; end;
     elseif ischar(value), % inputdlg
-        value = cell2mat(inputdlg(['Enter ',field],'',1,{value}));
+        value = local_setfun('inputdlg', field, value);
+        if isempty(value), value = nan; end;
+    end
+end
+
+% set value using function
+function value = local_setfun(fun, field, value)
+    if isa(fun,'function_handle'), fun = func2str(fun); end;
+    % switch based on function
+    switch lower(fun)
+        case {'uigetdir','directory'} % get directory
+            if ~ischar(value)&&~isdir(value), value = pwd; end;
+            disp(['Choose directory for ',field]);
+            value = uigetdir(value, ['Choose directory for ',field]);
+        case {'uigetfile','file'} % get file
+            disp(['Choose file for ',field]);
+            value = uigetfile([],['Choose file for ',field]);
+        case {'str2double','number'} % string to double
+            if ~isnumeric(value), value = []; end;
+            value = str2double(cell2mat(inputdlg(['Enter number for ',field],...
+            '',1,{num2str(value)})));
+        case 'cell' % multiple cells
+            if ~iscell(value), value = {}; end;
+            funs = {'Directory','File','Number','Cell','Input'};
+            n = str2double(cell2mat(inputdlg('Enter number of arguments to set:')));
+            if isnan(n), value = {}; return; end;
+            for x = 1:n,
+                chc = listdlg('PromptString',['Choose type to set ',field,' ',num2str(x)],...
+                    'ListString',funs,'SelectionMode','Single');
+                if isempty(chc), continue; end;
+                value{x} = local_setfun(funs{chc}, [field,' ',num2str(x)], '');
+            end
+        otherwise % input
+            if ~iscellstr(value)&&~ischar(value), value = ''; end;
+            value = cell2mat(inputdlg(['Enter ',field],'',1,{value}));
     end
 end
