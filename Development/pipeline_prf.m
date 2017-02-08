@@ -87,7 +87,7 @@ cellfun(@(x,y)assignin('caller', x, y), fields(:), values(:));
 diff = ~ismember(fields, orig_fields);
 if any(diff),
     dispi('Defaults set:', verbose);
-    cellfun(@(x)dispi(x, ': ', eval(x), verbose), fields(diff));
+    cellfun(@(x,y)dispi(x, ': ', y, verbose), fields(diff), values(diff));
 end
 
 % set outputs in params
