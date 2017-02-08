@@ -62,7 +62,12 @@ if ~exist('params','var')||isempty(params), % set params and return if none
     return;
 elseif ischar(params) && exist(params,'file'), % load params if char and file
     load(params);
+elseif isa(params, 'function_handle'), % load using params function
+    params = feval(params);
 end
+
+% get original fields
+orig_fields = fieldnames(params);
 
 % set notes_dir, verbose, err
 if ~exist('notes_dir','var')||isempty(notes_dir), notes_dir = ''; end;
@@ -77,6 +82,13 @@ params = local_getparams(params, steps, 'defaults');
 fields = fieldnames(params);
 values = struct2cell(params);
 cellfun(@(x,y)assignin('caller', x, y), fields(:), values(:));
+
+% display fields set as default
+diff = ~ismember(fields, orig_fields);
+if any(diff),
+    dispi('Defaults set:', verbose);
+    cellfun(@(x)dispi(x, ': ', eval(x), verbose), fields(diff));
+end
 
 % set outputs in params
 if ~isfield(params,'outputs'), params.outputs = cell(max(steps),1); end;
@@ -93,7 +105,7 @@ if ~isempty(notes_dir),
     % check notes_dir exists
     check_exist(notes_dir, verbose);
     % record notes
-    record_notes(notes_dir,mfilename);
+    record_notes(notes_dir, mfilename);
 end
 
 % display inputs
@@ -155,7 +167,7 @@ for x = steps
             end
             % set outputs
             params.outputs{x} = t1_edit_file;
-        case 4 % nifti header repair
+        case 4 % nifti header repair TODO: switch with step 5
             dispi('Copying ',fullfile(ni_dir,nifix_expr),' to ',nifix_dir,verbose);
             copyfile(fullfile(ni_dir,nifix_expr),nifix_dir);
             % fix headers
@@ -165,14 +177,14 @@ for x = steps
                 'slice_duration','eval((numel(ni.pixdim)>3)*ni.pixdim(end)/ni.dim(3))');
             % set outputs
             params.outputs{x} = get_dir(nifix_dir,nifix_expr);
-        case 5 % removal of ''pRF dummy'' frames
+        case 5 % removal of ''pRF dummy'' frames TODO: need separate folder?
             % get epis
             epis = get_dir(epi_dir,epi_expr);
             % remove frames
             loop_feval(@remove_frames,epis(:),dummy_n,verbose);
             % set outputs
             params.outputs{x} = epis;
-        case 6 % slice timing correction
+        case 6 % slice timing correction TODO: need separate folder
             % get epis
             epis = get_dir(epi_dir,epi_expr);
             % run slice time correction
@@ -391,12 +403,13 @@ end
 % check if dir exist then for files/number 
 for x = find(~cellfun('isempty',regexp(fields,'.*_dir$'))), 
     % check dir exists first
-    check_exist(values{x}, verbose, err);
+    check_folder(values{x}, verbose, err);
     % find other fields with same beginning
     strfield = regexprep(fields{x},'(\w+_).*','$1');
     idx = ~cellfun('isempty',regexp(fields, ['^',strfield,'[^(dir)]+']));
     idx = idx(~cellfun(@(x)iscell(x),values(idx)));
     % check exist with dir and other fields
-    check_exist(values{x}, values{idx}, verbose, err);
+    % TODO: if no files, do not check
+    check_files(values{x}, values{idx}, verbose, err);
 end
 end
