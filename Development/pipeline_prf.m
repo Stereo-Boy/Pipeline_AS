@@ -37,25 +37,40 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 % From the work made by Eunice Yang, Rachel Denison, Kelly Byrne, Summer
 % Sheremata
 
+% init step_names
+step_names = {'1.  nifti conversion',...
+  '2.  segmentation using freesurfer',...
+  '3.  correction of gray mesh irregularities',...
+  '4.  nifti header repair',... 
+  '5.  removal of dummy frames',...
+  '6.  slice timing correction',...
+  '7.  motion correction',...
+  '8.  motion outliers',...
+  '9.  initialization of mrVista session',...
+  '10. alignment of inplane and volume',...
+  '11. segmentation installation',...
+  '12. mesh creation',...
+  '13. pRF model'};
+
 % if no inputs, return and display all defaults
 if nargin==0, 
     help(mfilename); 
     % display default params
     disp('Default params:');
-    for x = 1:16,
+    for x = 1:numel(step_names),
         clear params fields values;
-        dispi('Step ', x);
+        dispi(step_names{x});
         params = local_getparams(struct, x, 'defaults'); 
         fields = fieldnames(params); values = struct2cell(params);
         cellfun(@(x,y)dispi(' ', x, ': ', y), fields, values);
     end
     % return all defaults
-    params = local_getparams(struct, 0, 'defaults');
+    params = local_getparams(struct, 1:numel(step_names), 'defaults');
     return; 
 end
 
 % if steps==0, set to all
-if ~exist('steps','var')||all(steps==0), steps = 1:16; end;
+if ~exist('steps','var')||all(steps==0), steps = 1:numel(step_names); end;
 if ~exist('params','var')||isempty(params), % set params and return if none
     params = local_getparams(struct, steps, 'set'); 
     params = local_getparams(params, steps, 'defaults');
@@ -108,6 +123,11 @@ if ~isempty(notes_dir),
     record_notes(notes_dir, mfilename);
 end
 
+% save params as tmpfile
+tmpfile = tempname(pwd);
+save([tmpfile,'.mat'], 'params');
+disp(['Parameters saved in temporary file: ', tmpfile, '.mat']);
+
 % display inputs
 dispi(mfilename,'\nsteps:\n',steps,'\nsubj_dir:\n',subj_dir,'\nsubjID:\n',...
     subjID,'\nparams:\n',params,'\nerror:\n',err,verbose);
@@ -116,7 +136,7 @@ try
 % run each step
 for x = steps
     % display step
-    dispi(repmat('-',1,20),'Running step ', x,repmat('-',1,20),verbose);
+    dispi(repmat('-',1,20),'Running step ', step_names{x},' ',repmat('-',1,20),verbose);
     
     % get fields and values for current step
     [~, fields] = local_getparams(params, x, 'defaults');
