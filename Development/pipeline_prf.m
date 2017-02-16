@@ -1,5 +1,5 @@
 function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varargin)
-% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'], ['errorON'])
+% params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, ['verboseOFF'], ['errorON'], ['overwrite'])
 % 
 % Inputs:
 % steps - number or numberic array of steps to run (default is 0, see below)
@@ -10,10 +10,13 @@ function params = pipeline_prf(steps, subj_dir, subjID, params, notes_dir, varar
 % notes_dir - string directory to save notes (default is ''; none)
 % 'verboseOFF' - prevent displays in command window (default is 'verboseON')
 % 'errorON' - throw error if checks prior to each step fail (default is 'errorOFF')
+% 'overwrite' - overwrite previous output files/folders
 %
 % Outputs: 
 % params - structure containing fields used as variables in the pipeline
 % params.outputs{step} will contain any outputs from each step run
+%
+% Usage: 
 %
 % Steps available to run:
 %   0.  All of the below steps
@@ -76,6 +79,11 @@ if ~exist('params','var')||isempty(params), % set params and return if none
     params = local_getparams(params, steps, 'defaults');
     return;
 elseif ischar(params) && exist(params,'file'), % load params if char and file
+    % copy params file
+    tmpfile = tempname(pwd);
+    params_file = params;
+    copyfile(params, [tmpfile,'_params.mat']);
+    disp(['Parameters copied in temporary file: ', tmpfile, '_params.mat']);
     load(params);
 elseif isa(params, 'function_handle'), % load using params function
     params = feval(params);
@@ -122,11 +130,6 @@ if ~isempty(notes_dir),
     % record notes
     record_notes(notes_dir, mfilename);
 end
-
-% save params as tmpfile
-tmpfile = tempname(pwd);
-save([tmpfile,'.mat'], 'params');
-disp(['Parameters saved in temporary file: ', tmpfile, '.mat']);
 
 % display inputs
 dispi(mfilename,'\nsteps:\n',steps,'\nsubj_dir:\n',subj_dir,'\nsubjID:\n',...
@@ -284,6 +287,11 @@ end
 % display done
 dispi(repmat('-',1,20),'Pipeline finished ',dateTime,repmat('-',1,20),verbose);
 
+% update tmpfile
+if exist('params_file','var'),
+    save(params_file, 'params', '-append');
+end
+
 % turn off record notes
 record_notes('off');
 end
@@ -423,13 +431,12 @@ end
 % check if dir exist then for files/number 
 for x = find(~cellfun('isempty',regexp(fields,'.*_dir$'))), 
     % check dir exists first
-    check_folder(values{x}, verbose, err);
+    check_exist(values{x}, verbose, err);
     % find other fields with same beginning
     strfield = regexprep(fields{x},'(\w+_).*','$1');
     idx = ~cellfun('isempty',regexp(fields, ['^',strfield,'[^(dir)]+']));
     idx = idx(~cellfun(@(x)iscell(x),values(idx)));
     % check exist with dir and other fields
-    % TODO: if no files, do not check
-    check_files(values{x}, values{idx}, verbose, err);
+    check_exist(values{x}, values{idx}, verbose, err);
 end
 end
