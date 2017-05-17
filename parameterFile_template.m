@@ -1,4 +1,6 @@
 function o=parameterFile(subj_dir, verbose)
+% before use, rename that file to parameterFile.m and put it in your current subject folder (one for each subject)
+
 %   o = parameterFile
 % This function neesd to be present in a the root folder for the subject to 
 % be analysed with pipeline_JAS.m.
@@ -11,7 +13,7 @@ function o=parameterFile(subj_dir, verbose)
 % Written nov 2016 - Adrien Chopin
 % Justin-unapproved
 
- % defines standard folders for each step 
+ % defines standard folders for each step
        o.mpr_dicom_dir = fullfile(subj_dir,'01a_mprage_DICOM');
        o.mpr_ni_dir = fullfile(subj_dir,'02_mprage_nifti');
        o.mpr_segm_dir = fullfile(subj_dir,'03_mprage_segmented');
@@ -47,10 +49,19 @@ function o=parameterFile(subj_dir, verbose)
                 
  % nifti header fix 
     o.nifti_fix_skip = 0;        % whether to skip (1) or do (0) nifti header fixing
+    if o.nifti_fix_skip==1       % in that case, be sure to also harmonize the folder names
+       dispi('Given nifti_fix_skip == 1, we make sure that mpr_niFixed_dir = mpr_segm_dir and ret_mcFixed_dir = ret_mc_dir', verbose)
+        o.mpr_niFixed_dir = o.mpr_segm_dir;
+        o.ret_mcFixed_dir = o.ret_mc_dir;
+    end
+                                 
     o.freq_dim = 1;              % necessary to correct nifti header
     o.phase_dim = 2;             % necessary to correct nifti header
     o.slice_dim = 3;             % necessary to correct nifti header
     
+ % correction of gray mesh irregularities 
+    o.itkgray_skip = 1;          % whether to skip (1) or not (0) the step for correction of gray mesh irregularities
+ 
  % mprage
     o.mprageSliceNb = 160;                                  % nb of slices in the mprage scan
     o.mpr_slice_end = 'eval(ni.dim(ni.slice_dim)-1)';       % necessary to correct nifti header for mprage
