@@ -20,9 +20,9 @@ function install_segmentation(mr_dir, seg_dir, ni_dir, verbose)
 % requires the VISTA Lab's Vistasoft package - available at: https://github.com/vistalab/vistasoft
 
 % init vars
-if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; dispi(); end;
-if ~exist('seg_dir','var')||isempty(seg_dir), seg_dir = fullfile(pwd,'Segmentation'); end;
-if ~exist('ni_dir','var')||isempty(ni_dir), ni_dir = fullfile(pwd,'nifti'); end;
+if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; dispi('empty mr_dri in install_segmentation defaulted to ', mr_dir); end;
+if ~exist('seg_dir','var')||isempty(seg_dir), seg_dir = fullfile(pwd,'Segmentation'); dispi('empty seg_dir in install_segmentation defaulted to ', seg_dir); end;
+if ~exist('ni_dir','var')||isempty(ni_dir), ni_dir = fullfile(pwd,'nifti'); dispi('empty ni_dir in install_segmentation defaulted to ', ni_dir);end;
 initialDir = pwd;
 
 % check for mr_dir

@@ -32,12 +32,6 @@ function init_session(mr_dir, nifti_dir, varargin)
 % Created by Justin Theiss 11/2016
 
 % init params
-if ~exist('mr_dir','var')||~exist(mr_dir,'dir'),
-    mr_dir = pwd;
-end
-if ~exist('nifti_dir','var')||~exist(nifti_dir,'dir'),
-    nifti_dir = fullfile(mr_dir,'nifti');
-end
 if isempty(varargin),
     % set defaults
     varargin = cell(1,8);
@@ -52,6 +46,15 @@ if any(strncmp(varargin,'verbose',7)),
     varargin(strcmp(varargin,verbose)) = [];
 else % default on
     verbose = 'verboseON';
+end
+
+if ~exist('mr_dir','var')||~exist(mr_dir,'dir'),     mr_dir = pwd; dispi('[alignment] empty mr_dir defaulted to ',mr_dir , verbose)
+else     dispi('To run mrInit correctly, you need to be in the session directory so we go there', verbose);
+    cd(mr_dir)
+end
+
+if ~exist('nifti_dir','var')||~exist(nifti_dir,'dir'),
+    nifti_dir = fullfile(mr_dir,'nifti');
 end
 
 % display inputs
@@ -80,6 +83,9 @@ for x = 1:2:numel(varargin),
         clear d; d = dir(fullfile(tmp_dir,varargin{x+1}));
         if ~isempty(d), 
             params.(varargin{x}) = fullfile(tmp_dir,{d.name}); 
+            if strcmp(varargin{x},'functionals') %also add annotations then
+                params.annotations = {d.name};
+            end
         end;
     else % set directly
         params.(varargin{x}) = varargin{x+1};

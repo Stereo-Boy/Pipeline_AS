@@ -26,7 +26,7 @@ function [success, nbFiles] = check_files(folder, expr, n, forceError, verbose)
 % return number of files with expr == n
 if ~exist('verbose', 'var'); verbose='verboseON'; end
 if ~exist('forceError', 'var'); forceError=0; end
-if ~exist('folder','var')||~exist(folder, 'dir'), help(mfilename);erri('Missing folder'); end
+if ~exist('folder','var')||~exist(folder, 'dir'), help(mfilename);erri('[check_files] Missing folder: ', folder); end
 if ~exist('expr','var'), expr='*.*';warni('check_files expr parameter missing - defaulting to all files in folder', verbose); end
 
 nbFiles=numel(dir(fullfile(folder,expr)));

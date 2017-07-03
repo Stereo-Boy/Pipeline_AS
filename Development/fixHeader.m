@@ -21,11 +21,6 @@ function fixHeader(source_dir, expr, dest_dir, check_n, varargin)
 %
 % Created by Justin Theiss, updated Adrien Chopin Jan 2017
 
-    % init defaults
-    if ~exist('source_dir','var')||~exist(source_dir,'dir'), source_dir = pwd; end;
-    if ~exist('expr','var')||isempty(expr), expr = '*.nii*'; end;
-    if ~exist('dest_dir','var')||~exist(dest_dir,'dir'), dest_dir = source_dir; end;
-
     % get verbose
     if any(strncmp(varargin,'verbose',7)),
         verbose = varargin(strncmp(varargin,'verbose',7));        verbose=verbose{1}; %otherwise does not work
@@ -33,6 +28,11 @@ function fixHeader(source_dir, expr, dest_dir, check_n, varargin)
     else % default on
         verbose = 'verboseON';
     end
+
+   % init defaults
+    if ~exist('source_dir','var')||~exist(source_dir,'dir'), source_dir = pwd; warni('[fixHeader] empty source_dir defaulted to ',source_dir, verbose); end;
+    if ~exist('expr','var')||isempty(expr), expr = '*.nii*'; warni('[fixHeader] empty expr defaulted to ',expr, verbose);end;
+    if ~exist('dest_dir','var')||~exist(dest_dir,'dir'), dest_dir = source_dir; warni('[fixHeader] empty dest_dir defaulted to ',dest_dir, verbose);end;
 
     % get fields and values from varargin
     fields = varargin(1:2:end);
@@ -45,7 +45,7 @@ function fixHeader(source_dir, expr, dest_dir, check_n, varargin)
     else % set vars to empty
         vars = {};
     end
-
+    
     % display inputs
     dispi(mfilename,'\nsource_dir: ',source_dir,'\nexpr: ',expr,'\ndest_dir: ',dest_dir, '\n',vars{:},verbose);
 
@@ -54,7 +54,7 @@ function fixHeader(source_dir, expr, dest_dir, check_n, varargin)
     %files = fullfile(source_dir,{d.name});
     [files, nn] = get_dir(source_dir, expr);
 
-    if nn~=check_n; dispi('Incorrect number of files selected for nifti header fix: (',expr,') ',nn,'/',check_n, verbose); end
+    if nn~=check_n; errori('Incorrect number of files selected for nifti header fix: (',expr,') ',nn,'/',check_n, verbose); end
         
     % for each file, set headers
     for x = 1:numel(files),

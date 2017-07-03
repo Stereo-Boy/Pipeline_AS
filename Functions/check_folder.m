@@ -2,6 +2,8 @@ function output = check_folder(folder, forceError, verbose)
 % output = checkFolder(folder, forceError, verbose)
 %
 % Checking whether the input is an existing folder(s) in the current pwd, and may create it otherwise without a warning. 
+% Importantly, if the path has an extension, it is treated as a file and not created as a folder, but if it
+% does not have an extension, it is treated as a folder even if it does not end with a slash.
 % The input folder can be a list of folders in a cell array including empty cells
 %
 % forceError = 1 (default 0): forces an error and therefore does not creates the folder
@@ -30,7 +32,7 @@ if ~exist('folder', 'var')
         warni('[check_folder] needs an input', verbose)
 else
    if ~iscell(folder), folder = {folder};end; %transforms in a cell array so that we can parse it one cell after one
-   if numel(folder)==0;         dispi('[check_folder] Folder wass not created because it is an empty string.', verbose) ;    end
+   if numel(folder)==0;         dispi('[check_folder] Folder was not created because it is an empty string.', verbose) ;    end
    for ff = 1:numel(folder), 
        currentFF = folder{ff};
        if iscell(currentFF);   %if there is a cell array in the cell array, recursively apply the function
@@ -42,14 +44,19 @@ else
                 output{ff}=currentFF;
             else  % not a folder
                     if forceError==1
-                        erri('[check_folder] Folder does not exist: ',currentFF)
+                        erri('[check_folder] Folder does not exist or is not a folder: ',currentFF)
                     else
-                        if isempty(currentFF)==0
-                            dispi('[check_folder] Folder does not exist so attemps to create it: ', currentFF, verbose)
-                            [success,message]=mkdir(currentFF);
-                            if success; dispi('[check_folder] Folder created');output{ff}=currentFF; else warni('Could not create folder because: ', message, verbose);end    
+                        [current_dir, current_file, current_extension]=fileparts(currentFF);
+                        if isempty(current_extension)==0 %this is likely a file given an extension so treat it as such
+                              dispi('[check_folder] Folder was not created because it is referring to a file called ', fullfile(current_file,current_extension), verbose)  
                         else
-                            dispi('[check_folder] Folder was not created because it is an empty string.', verbose)  
+                            if isempty(currentFF)==0
+                                dispi('[check_folder] Folder does not exist so we attempt to create it: ', currentFF, verbose)
+                                [success,message]=mkdir(currentFF);
+                                if success; dispi('[check_folder] Folder created');output{ff}=currentFF; else warni('Could not create folder because: ', message, verbose);end    
+                            else
+                                dispi('[check_folder] Folder was not created because it is an empty string.', verbose)  
+                            end
                         end
                     end
             end

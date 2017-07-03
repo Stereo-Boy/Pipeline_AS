@@ -1,17 +1,19 @@
-function extractPARfile2(stamFile,rootEpi)
-% certainly, you want to use extractPARfile3
+function extractPARfile3(stamFile, focus, rootEpi)
+% CORRECT VERSION for Adrien
 %
-% This version (for Adrien) extracts the design matrix for mrVista into a PAR file, from the stam files.
-% However, it gives a unique code for crossed disparity and correlated, a unique for crossed and uncorrelated, another one
-% for uncrossed and correlated and one for uncrossed and uncorrelated.
+% This version extracts the design matrix for mrVista into a PAR file, from the stam files.
+% The smart thing to do with it is to run it once with a give rootEpi (like COR for correlated) with focus = 1 (on COR events).
+% It will issues a par file with unique code for onset of any crossed event, and one for uncrossed events, ignoring anti-correlated events
+% With that parfile, a GLM can be run to nourrish the MVPA decoding and get accuracies for correlated events.
+% Then doing it again with anticorrelated events only (focus = 2 and rootEPO could be ANTI) and issuing new GLM betas and MVPA accuracies.
 %
-%this version writes unique PAR files for multiple predictors
 %YOU NEED TO CD IN THE STAM DIRECTORY FIRST
 % stamfile is the file with the stimuli matrix
 % rootEpi is the root from which are par file names generated
 % Ex of use: extractPARfile2('mv40pre10_MRI_1.mat','epi') will read
 % mv40pre10_MRI_1.mat and generate par files called epi01, epi02...
 if ~exist('stamFile','var');error('Stam file not defined for extractPARfile function - .mat is important'); end
+if ~exist('focus','var');disp('Default focus is 1 for correlated events'); focus = 1; end
 if ~exist('rootEpi','var');disp('Default root epi name used: epi'); rootEpi = 'epi'; end
 if ~exist(stamFile,'file');error('Stam file not found for extractPARfile function'); end
 
@@ -54,14 +56,13 @@ disp(['Loading following stam data file: ', stamFile])
     end
     
     fixationDuration = 15.7;
-        % Event codes
+        % codes
         % 0 Fixation
-        % 1 -/+ configuration correlated
-        % 2 +/- configuration correlated
-        % 3 -/+ configuration anti-correlated
-        % 4 +/- configuration anti-correlated
-        eventCodes = {'Fixation', 'MinusCOR', 'PlusCOR', 'MinusANT', 'PlusANT' } %NO slash in names
-        colorCodes = [[0.9 0 0]; [0 0.9 0]; [0 0.45 0]; [0 0 0.9]; [0 0 0.45]];
+        % 1 -/+ configuration 
+        % 2 +/- configuration 
+
+        eventCodes = {'FX', 'L', 'R'} %NO slash in names
+       % colorCodes = [[0.9 0 0]; [0 0.9 0]; [0 0.45 0]; [0 0 0.9]; [0 0 0.45]];
         
     %for each run
     for run = 1:nbRuns
@@ -74,7 +75,7 @@ disp(['Loading following stam data file: ', stamFile])
         currentLine = 1; %initialize line of the design matrix in par file
 
         %Start run with fixation
-        parfile = {time 0 eventCodes{1} colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)};       
+        parfile = {time 0 eventCodes{1}}; % colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)      
         time = time+fixationDuration;
         currentLine = currentLine + 1;
 
@@ -105,22 +106,23 @@ disp(['Loading following stam data file: ', stamFile])
                     code = data(i,2);
                 end
                 
-                if data(i,4)==1 % correlated
-                    codeEvent = code ;
-                    codeEvent2 = code + 1;
-                else %uncorrelated
-                    codeEvent = code + 2;
-                    codeEvent2 = code + 3;
+                if data(i,4)==1 & focus==1 % correlated
+                    parfile(currentLine,:) = {time code eventCodes{code+1}};
+                    %move to next event line
+                    currentLine = currentLine + 1;
                 end
-                parfile(currentLine,:) = {time codeEvent eventCodes{codeEvent2} colorCodes(codeEvent2,1) colorCodes(codeEvent2,2) colorCodes(codeEvent2,3)};                           
-
-            %move to next event line
-            currentLine = currentLine + 1;
+                if data(i,4)==2 & focus==2 %uncorrelated
+                    parfile(currentLine,:) = {time code eventCodes{code+1}};
+                    %move to next event line
+                     currentLine = currentLine + 1;
+                end                     
+                
+            
             time = round(1000*(time+14*2*0.56075))/1000;
         end
 
         %finish with fixation on last run
-        parfile(currentLine,:)  = {time 0 eventCodes{1} colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)};
+        parfile(currentLine,:)  = {time 0 eventCodes{1}};
 
         parfile
         writeMatToFile(parfile,[rootEpi,sprintf('%02.f',runs(run)),'.par'])

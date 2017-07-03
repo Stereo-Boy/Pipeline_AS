@@ -8,11 +8,11 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose, option
 %
 % Steps available to run:
 %   0. All of the below steps
-%   1. mprage: nifti conversion (dcm2niix)
+%   1. mprage: nifti conversion (dcm2niix from MRIcron)
 %   2. mprage: segmentation (Freesurfer)
 %   3. mprage: correction of gray mesh irregularities (itkGray)
 %   4. mprage: nifti header repair
-%   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames (dcm2niix)
+%   5. retino epi/gems: nifti conversion and removal of ''pRF dummy'' frames (dcm2niix from MRIcron)
 %   6. retino epi/gems: motion correction (FSL)
 %   7. retino epi: MC parameter check and artefact removal (FSL)
 %   8. retino epi/gems: nifti header repair
@@ -37,13 +37,20 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose, option
 %   25. exp epi: actual GLM model
 %   25. exp epi: mesh visualization
 %
+%  TO USE GLM INSTEAD OF pRF
+% ------------------------------
+%  The pipeline can be used to pre-process data for GLM or anything else than retinotopy. Do as for retinotpy, but just don't run 
+%  pRF-specific step like 13-14). 
+%  In that case, you will also need to issue .par files manually and assign them manually too. For that, in the mrVista session, copy
+%  your par files in the Stimuli/Parfiles folder. Then either run run_glm or do GLM>assign parfiles to scans. You also need to group scan together in 
+%  GLM>grouping>group scans. Check if it is all correct with GLM>show parfiles/scan group.
+%
 % Other inputs:
-% - subj_dir: directory path for subject analysis (string) - root of all
-%   other folders for that subject
-% - subjID: subject id (string, if not provided will take the name of the subject folder)
-% - notes_dir: [optional] directory path to save command output (string),
-%   default is subj_ID_date_pipeline
-% - verbose: if verbose = verboseOFF, none of the disp function will give an
+% --------------
+% - subj_dir: directory path for subject analysis (string) - root of all other folders for that subject
+% - subjID: [optional] subject id (string, if not provided, will guess from the name of the subject folder)
+% - notes_dir: [optional] directory path to save command output (string),   default is 'notes'
+% - verbose: [optional] if verbose = verboseOFF, none of the disp function will give an
 %   ouput (default is verboseON)
 % ------------------------------------------------------------------------
 
@@ -71,13 +78,13 @@ try
     cd(check_folder(subj_dir, 1, verbose));
     
     %check for subjID
-    if ~exist('subjID','var')||isempty(subjID); dispi('subjID not defined: deduce it from directory.');[~, subjID] = fileparts(subj_dir); end;
+    if ~exist('subjID','var')||isempty(subjID); dispi('subjID not defined: we deduce it from directory.');[~, subjID] = fileparts(subj_dir); end;
     
     %check for notes_dir
-    if exist('notes_dir','var')||isempty(notes_dir)==0; 
-        % creates notes_dir if necessary and start diary, otherwise don't take notes
+    if ~exist('notes_dir','var')||isempty(notes_dir)==0; notes_dir='notes'; end
+        % creates notes_dir if necessary and starts diary
         record_notes(check_folder(notes_dir,0, verbose),'pipeline_JAS')
-    end
+
 
     % MENU
     while (~exist('stepList2run', 'var')|isempty(stepList2run)|isnumeric(stepList2run)==0|stepList2run<=0|stepList2run>14)
@@ -287,8 +294,10 @@ try
                 copy_files(mpr_niFixed_dir, '*nu_RAS_NoRS*.nii.gz', fullfile(ret_mr_ni_dir,mprageFile), verbose) %copy nifti fixed mprage to nifti mrvista folder
                 check_files(ret_mr_ni_dir,'*epi*mcf*.nii.gz', retinoEpiNb, 0, verbose); %looking for all the epis
                 close all;
+                current_dir= pwd; cd(ret_mr_dir); %important step for mrVista session initialization to define HOMEDIR correctly
                 init_session(ret_mr_dir, ret_mr_ni_dir, 'inplane',fullfile(ret_mr_ni_dir,gemsFile),'functionals','*epi*mcf*.nii*','vAnatomy',fullfile(ret_mr_ni_dir,mprageFile),...
                     'sessionDir',ret_mr_dir,'subject', subjID)
+                cd(current_dir);
                 %alternative: kb_initializeVista2_retino(ret_mr_dir, subjID)
                 
          case {10}  %   10. retino epi/gems: alignment of inplane and volume (FSL/mrVista)
@@ -298,12 +307,13 @@ try
                 if reference==4; dispi('Warning: here we have motion-correct the GEMS file to the first EPI so that the ipath to the GEMS dicom folder is incorrect', verbose);
                     dispi('There is no way to convert the nifti back to DICOM but it may be not a big deal given only the (untouched) header is necessary for that file', verbose)
                 end
-                xform = alignment(ret_mr_dir, fullfile(ret_mr_ni_dir,mprageFile), fullfile(ret_mr_ni_dir, gemsFile), ipath_dir);
+                xform = alignment(ret_mr_dir, fullfile(ret_mr_ni_dir,mprageFile), fullfile(ret_mr_ni_dir, gemsFile), ipath_dir, [1:5]);
                 dispi('Resulting xform matrix:',verbose)
                 disp(xform)
                 [averageCorr, sumRMSE]=extractAlignmentPerfStats(ret_mr_dir, retinoGemsSliceNb, verbose);
-                 
-         case {11}  %   11. retino epi: segmentation installation (mrVista)
+                if isnan(averageCorr)||averageCorr<0.7, errori('Alignment failed - correlation is <0.7, please run a different alignment procedure', verbose);   end
+         
+        case {11}  %   11. retino epi: segmentation installation (mrVista)
              dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: install of segmentation (mrVista) ------------------------------', verbose) 
              install_segmentation(ret_mr_dir, mpr_segm_dir, ret_mr_ni_dir, verbose)
                
