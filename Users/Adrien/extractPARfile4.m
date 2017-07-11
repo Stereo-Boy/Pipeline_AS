@@ -1,25 +1,30 @@
-function extractPARfile3(stamFile, focus, rootEpi)
-% for ANT / COR glm models (cue onset not included)
-% 2 x 3 predictors (including fixation)  
+function extractPARfile4(stamFile, rootName)
+% CORRECT VERSION for Adrien (Full model with two configurations / two correlation and cue onset)
+% 6 predictors (including fixation)  
 %
 % This version extracts the design matrix for mrVista into a PAR file, from the stam files.
-% The smart thing to do with it is to run it once with a give rootEpi (like COR for correlated) with focus = 1 (on COR events).
-% It will issues a par file with unique code for onset of any crossed/left event, and one for uncrossed/left events, ignoring anti-correlated events
-% With that parfile, a GLM can be run to nourrish the MVPA decoding and get accuracies for correlated events.
-% Then doing it again with anticorrelated events only (focus = 2 and rootEPO could be ANTI) and issuing new GLM betas and MVPA accuracies.
+% The smart thing to do with it is to run it once with a rootName for generated par files
+% It will issues a par file by run, with unique code for onset of any crossed/left event correlated, one for uncrossed/left events
+% but also one for anti-correlated crossed/left and uncrossed/left events
+% With that parfile, a GLM can be run to nourrish the MVPA decoding and get accuracies by selecting only betamaps including
+% correlated events and then replicating with betamaps for anticorrelated events only
 %
-%YOU NEED TO CD IN THE STAM DIRECTORY FIRST
+% YOU NEED TO CD IN THE STAM DIRECTORY FIRST
 % stamfile is the file with the stimuli matrix
-% rootEpi is the root from which are par file names generated
+% rootName is the root from which are par file names generated
 % Ex of use: extractPARfile2('mv40pre10_MRI_1.mat','epi') will read
 % mv40pre10_MRI_1.mat and generate par files called epi01, epi02...
 if ~exist('stamFile','var');error('Stam file not defined for extractPARfile function - .mat is important'); end
-if ~exist('focus','var');disp('Default focus is 1 for correlated events'); focus = 1; end
-if ~exist('rootEpi','var');disp('Default root epi name used: epi'); rootEpi = 'epi'; end
+if ~exist('rootName','var');disp('Default root epi name used: epi'); rootName = 'epi'; end
 if ~exist(stamFile,'file');error('Stam file not found for extractPARfile function'); end
+
+%Files need to exist
+check_files(cd, stamFile, 1, 1);
 
 disp(['Loading following stam data file: ', stamFile])
 
+    fixationDuration = 7*2.2428;
+    dispi('Fixation duration is ', fixationDuration)
     load(stamFile)
     inverted = 0; %if this parameter is 1, it means that LE was not red but green (0 otherwise LE = red)
     if inverted ==1
@@ -30,15 +35,16 @@ disp(['Loading following stam data file: ', stamFile])
     else
         disp('Data are not declared inverted - LE sees red')
     end
-    data = runSaved(:,[1,7,10,12,13,15]);
-    
+    data = runSaved(:,[1,7,10,12,13,15,18]);
+
                 % ----- DATA TABLE STRUCTURE -----
                 %    1:  trial # in block; each one is a ON and a OFF
                 %    2:  config, where is  closest stimulus 1: left (-/+) - 2: right (+/-)
                 %    3: disparity value in arcsec (of left stimulus)
                 %    4: correlated (1: yes, 2: anti)
                 %    5: block # -chrono order- (one block is either +/- configuration or -/+ configuration and one disp)
-                %    6:  runNb
+                %    6: run nb
+                %    7: attentional cue onsets (0 no, 1 yes)
     
     %WRITE one PAR file by EPI, so split data by epi run if more than 1
     runs = logic('union',data(:,6),[]);
@@ -56,13 +62,15 @@ disp(['Loading following stam data file: ', stamFile])
         dataSplit = data;
     end
     
-    fixationDuration = 15.7;
         % codes
         % 0 Fixation
-        % 1 -/+ configuration 
-        % 2 +/- configuration 
-
-        eventCodes = {'FX', 'L', 'R'} %NO slash in names
+        % 1 -/+ configuration correlated
+        % 2 +/- configuration correlated
+        % 3 -/+ configuration anti-correlated
+        % 4 +/- configuration anti-correlated
+        % 5 cue onset  
+        
+        eventCodes = {'FX', 'L_COR', 'R_COR', 'L_ANT', 'R_ANT', 'CUE'} %NO slash in names
        % colorCodes = [[0.9 0 0]; [0 0.9 0]; [0 0.45 0]; [0 0 0.9]; [0 0 0.45]];
         
     %for each run
@@ -70,9 +78,9 @@ disp(['Loading following stam data file: ', stamFile])
         %select data from that run
         data = dataSplit(:,:,run);
         time = 0; %initialize time
-        
+       
         %select one event every 14 (given in each block, all 14 trials are identical)
-        data = data(1:14:size(data,1),:);
+        data14 = data(1:14:size(data,1),:);
         currentLine = 1; %initialize line of the design matrix in par file
 
         %Start run with fixation
@@ -80,7 +88,7 @@ disp(['Loading following stam data file: ', stamFile])
         time = time+fixationDuration;
         currentLine = currentLine + 1;
 
-        for i=1:size(data,1) %go through each data line
+        for i=1:size(data14,1) %go through each data line
             
             %Given we split data between runs, the following case should not happen
             %anymore (detection of change of run): so I comment it
@@ -96,37 +104,48 @@ disp(['Loading following stam data file: ', stamFile])
 %                     currentLine = currentLine + 1;
 %                     time = time+fixationDuration;
 %             end
-            if i>1 && data(i,6)~=data(i-1,6) %DETECT CHANGE OF RUN
+            if i>1 && data14(i,6)~=data14(i-1,6) %DETECT CHANGE OF RUN
                 error('We detected a change of run in the epi data: that should not happen - check the code')
             end
             
                 
                 if inverted ==1 %deal with inverted eyes (this invert the configuration)
-                    code = 3-data(i,2);
+                    code = 3-data14(i,2);
                 else
-                    code = data(i,2);
+                    code = data14(i,2);
                 end
                 
-                if data(i,4)==1 & focus==1 % correlated
+                if data14(i,4)==1  % correlated
                     parfile(currentLine,:) = {time code eventCodes{code+1}};
                     %move to next event line
-                    currentLine = currentLine + 1;
                 end
-                if data(i,4)==2 & focus==2 %uncorrelated
-                    parfile(currentLine,:) = {time code eventCodes{code+1}};
+                if data14(i,4)==2  %anti-correlated
+                    parfile(currentLine,:) = {time code+2 eventCodes{code+3}};
                     %move to next event line
-                     currentLine = currentLine + 1;
                 end                     
-                
+                currentLine = currentLine + 1;
             
-            time = round(1000*(time+14*2*0.56075))/1000;
+            time = round(1000*(time+7*2.2428))/1000;
         end
 
+        %redo this for the cue onset events
+        time = fixationDuration;
+        for i=1:size(data,1) %go through each data line
+            if data(i,7)==1
+                parfile(currentLine,:) = {time 5 eventCodes{6}};
+                currentLine = currentLine + 1;
+            end
+            time = round(1000*(time+(2.2428/2)))/1000;
+        end
+        
+        %sort par file by time of onset
+        parfile=sortrows(parfile,1);
+        
         %finish with fixation on last run
         parfile(currentLine,:)  = {time 0 eventCodes{1}};
 
         parfile
-        writeMatToFile(parfile,[rootEpi,sprintf('%02.f',runs(run)),'.par'])
+        writeMatToFile(parfile,[rootName,sprintf('%02.f',runs(run)),'.par'])
     end
 end
 

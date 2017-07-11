@@ -12,6 +12,7 @@ function run_glm(mr_dir, TR, epi_nb, par_dir, tr_by_block, newDTname, grayFlag, 
 % epi_nb is the number of runs of data
 % tr_by_block is the number of TR by blocks in case of blocked design (0 if event-related)
 % grayFlag describes whether to run the GLM on all voxels (0) or only on the gray voxels (1)
+% If you use this flag, be sure to have transformed the time Series firts in Gray>Xform>Inplane>Volume>tSeries (all scans)
 % newDTname is the name to give to the dataType - providing a name REALLY avoids mistakes, so please do
 
 %show help when no argument given
@@ -68,17 +69,21 @@ function run_glm(mr_dir, TR, epi_nb, par_dir, tr_by_block, newDTname, grayFlag, 
     for scan=1:epi_nb
         view.curScan= scan;                                         % assign current scan
         dispi('Scan ', scan)
+        % see option description here: http://web.stanford.edu/group/vista/cgi-bin/wiki/index.php/MrVista_1_conventions#eventAnalysisParams
         params.framePeriod = TR;
         params.detrend= -1; %linear
         params.eventAnalysis=1;
         params.eventsPerBlock=tr_by_block;
-        params.snrConds = [1 2]; %all non-fixation
+        params.snrConds = [1 2]; %all non-fixation (not used but could be for calculating SNR and HRF)
         params.normBsl = 0; %no baseline normalization
         params.glmHRF = 2; %boyton
+        params.ampType = 'betas';
+        params.inhomoCorrect=1; %divide intensity by the mean at that voxel
         er_setParams(view, params, scan);
-        dataTYPES(1).scanParams(scan).parfile=list_par_files{scan}; % assign parfile
+        %dataTYPES(1).scanParams(scan).parfile=list_par_files{scan}; % assign parfile / could use er_assignParfilesToScans instead
+        view = er_assignParfilesToScans(view, scan, list_par_files(scan)); 
         dispi('Parfile: ', dataTYPES(1).scanParams(scan).parfile)
-        view = er_groupScans(view,scan,2,1);                        % assign scan group
+        view = er_groupScans(view,scan,2,1);                        % assign scan group 
         dispi('Scangroup: ', dataTYPES(1).scanParams(scan).scanGroup)
 
         % run GLM

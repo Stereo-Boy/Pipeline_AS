@@ -3,7 +3,7 @@ function xform = alignment(mr_dir, vol, ref, ipath, steps, verbose)
 %
 % Automated alignment:
 % 1. run fsl brain extraction
-% 2. run mrvista coarse alignment
+% 2. run mrvista coarse alignment (spm_coreg)
 % 3. run mrvista fine alignment 
 % 4. run mrvista Nestares fine alignment
 % 5. save alignment matrix to mrSESSION.mat in mr_dir
