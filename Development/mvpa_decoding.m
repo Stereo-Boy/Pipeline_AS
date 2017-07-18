@@ -1,4 +1,4 @@
-function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_flag, notes_dir, verbose)
+function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_flag, notes_dir, predictors, verbose)
 % mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_flag,notes_dir, verbose)
 % script to apply mvpa on brain images using the TDT
 % mr_dir: the directory for the mr vista session
@@ -13,6 +13,8 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
 % gray_flag is a flat restricting the analysis to gray voxels - the flag is needed because mrVista does
 % not work with the same dimensions then
 % if your brain is not 90x90x38, then we have to add a size parameter (or read it in a way)
+% notes_dir is where we save notes from record_notes (default is notes)
+% predictors - which beta predictors maps to load for decoding? (default is first and second predictors only)
 
 %show help when no argument given
     if nargin==0;         help(mfilename);         return;    end  
@@ -32,6 +34,7 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
     if ~exist('mvpa_analysis','var')||isempty(mvpa_analysis), mvpa_analysis = 'wholebrain'; dispi('[mvpa_decoding] empty mvpa_analysis defaulted to ',mvpa_analysis, verbose); end;
     if ~exist('gray_flag','var')||isempty(gray_flag), gray_flag = 0; dispi('[mvpa_decoding] empty gray_flag defaulted to ',gray_flag, verbose); end;
     if ~exist('dtName','var')||isempty(dtName), dtName = 'GLM_default'; dispi('[mvpa_decoding] empty dtName defaulted to ',dtName, verbose); end;
+    if ~exist('predictors','var')||isempty(predictors), predictors = [1,2]; warni('[mvpa_decoding] empty predictors defaulted to ',predictors, ' only. It is important that you choose the correct ones here', verbose); end;
 
 % first check for existence of directories
     dispi('We are running a ', mvpa_analysis,' MVPA with ', nbRuns,' runs from a dataType called: ', dtName, verbose)
@@ -55,32 +58,30 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
     chunks=[];
     labels=[];
 
-    %check that nbRuns is as expected. This is because GLMs are added serially to the map array
-    % and it cannot be suppressed, so if one makes an error, you obtained extra slots in the array
-    % If this happens, you should delete the map completely (or the GLM) and runs it without error
-    load(fullfile(betamap_dir,'betas_predictor1')) %this one loads map and mapName
-    dispi('We load two files: ',fullfile(betamap_dir,'betas_predictor1'),verbose)
-    if numel(map)~=nbRuns
-       errori('Map size is incorrect: it should be ', nbRuns, ' and it is ', numel(map), verbose)
-    end
+    
+    for beta=predictors
+        %check that nbRuns is as expected. This is because GLMs are added serially to the map array
+        % and it cannot be suppressed, so if one makes an error, you obtained extra slots in the array
+        % If this happens, you should delete the map completely (or the GLM) and runs it without error
+        currentBetaFile= fullfile(betamap_dir,['betas_predictor',num2str(beta)]) ;
+        load(currentBetaFile) %this one loads map and mapName
+        dispi('We load: ',currentBetaFile,verbose)
+        %careful here: the run predictor is added as last betas_predictor and the first ones are your other 
+        % predictors. Fixation (code 0 in the model) is never a predictor
+        if numel(map)~=nbRuns
+           errori('Map size is incorrect: it should be ', nbRuns, ' and it is ', numel(map), verbose)
+        end
 
-    for i=1:nbRuns
-        this_run_map = map{i};
-        betamaps = [betamaps;this_run_map(:)'];
-        chunks=[chunks;i];
-        labels=[labels;1];
-    end
+        for i=1:nbRuns
+            this_run_map = map{i};
+            betamaps = [betamaps;this_run_map(:)'];
+            chunks=[chunks;i];
+            labels=[labels;beta];
+        end
 
-    clear map
-    load(fullfile(betamap_dir,'betas_predictor2'))
-    dispi('and: ',fullfile(betamap_dir,'betas_predictor2'),verbose)
-    for i=1:nbRuns
-        this_run_map = map{i};
-        betamaps = [betamaps;this_run_map(:)'];
-        chunks=[chunks;i];
-        labels=[labels;2];
+        clear map
     end
-    clear map
+    
     dispi('We are now running the decoding MVPA on betamaps of size ',size(betamaps), verbose)
     dispi('Run structure is:', verbose); disp(chunks);
     dispi('Labels structure is:', verbose); disp(labels)
@@ -92,8 +93,7 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
     cfg.results.dir=fullfile(tdt_dir,'decoding_results');
     cfg.analysis = mvpa_analysis;
     cfg.results.overwrite = 1;
-    cfg.results.output = {'accuracy', 'accuracy_minus_chance', 'sensitivity_minus_chance',...
-'specificity_minus_chance'};
+    cfg.results.output = {'accuracy', 'accuracy_minus_chance'};
 
     cfg.files.chunk=chunks;
     cfg.files.label=labels;
@@ -151,12 +151,18 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
             accuracy_minus_chance = results.accuracy_minus_chance.output;
             save(fullfile(mvpa_dir,'wholebrain_Res'), 'accuracy_minus_chance');
         case('searchlight')
+                figure()
+                hist(results.accuracy_minus_chance.output,14)
+                resultPos=results.accuracy_minus_chance.output;
+                resultPos(resultPos<0)=0;
             if gray_flag==1
                 map={results.accuracy_minus_chance.output'};
+                mapPos={resultPos'};
             else
                 map={reshape(results.accuracy_minus_chance.output,[90 90 38])};
+                mapPos={reshape(resultPos,[90 90 38])};
             end
             mapName='acc_chance_searchlight';
-            save(fullfile(mvpa_dir,'acc_chance_searchlight'), 'map','mapName');
+            save(fullfile(mvpa_dir,'acc_chance_searchlight'), 'map','mapName','mapPos');
     end
     

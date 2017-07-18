@@ -1,6 +1,8 @@
-function extractPARfile4(stamFile, rootName)
+function extractPARfile5(stamFile, rootName)
+% CORRECT VERSION
 % for Adrien (Full model with two configurations / two correlation and cue onset)
-% 6 predictors (including fixation)  
+% This version uses an event-related design with each 1/2 TR being described
+% 6 predictors (including fixation and cue onset)  
 %
 % This version extracts the design matrix for mrVista into a PAR file, from the stam files.
 % The smart thing to do with it is to run it once with a rootName for generated par files
@@ -79,8 +81,6 @@ disp(['Loading following stam data file: ', stamFile])
         data = dataSplit(:,:,run);
         time = 0; %initialize time
        
-        %select one event every 14 (given in each block, all 14 trials are identical)
-        data14 = data(1:14:size(data,1),:);
         currentLine = 1; %initialize line of the design matrix in par file
 
         %Start run with fixation
@@ -88,7 +88,7 @@ disp(['Loading following stam data file: ', stamFile])
         time = time+fixationDuration;
         currentLine = currentLine + 1;
 
-        for i=1:size(data14,1) %go through each data line
+        for i=1:size(data,1) %go through each data line
             
             %Given we split data between runs, the following case should not happen
             %anymore (detection of change of run): so I comment it
@@ -104,28 +104,28 @@ disp(['Loading following stam data file: ', stamFile])
 %                     currentLine = currentLine + 1;
 %                     time = time+fixationDuration;
 %             end
-            if i>1 && data14(i,6)~=data14(i-1,6) %DETECT CHANGE OF RUN
+            if i>1 && data(i,6)~=data(i-1,6) %DETECT CHANGE OF RUN
                 error('We detected a change of run in the epi data: that should not happen - check the code')
             end
             
                 
                 if inverted ==1 %deal with inverted eyes (this invert the configuration)
-                    code = 3-data14(i,2);
+                    code = 3-data(i,2);
                 else
-                    code = data14(i,2);
+                    code = data(i,2);
                 end
                 
-                if data14(i,4)==1  % correlated
+                if data(i,4)==1  % correlated
                     parfile(currentLine,:) = {time code eventCodes{code+1}};
                     %move to next event line
                 end
-                if data14(i,4)==2  %anti-correlated
+                if data(i,4)==2  %anti-correlated
                     parfile(currentLine,:) = {time code+2 eventCodes{code+3}};
                     %move to next event line
                 end                     
                 currentLine = currentLine + 1;
             
-            time = round(1000*(time+7*2.2428))/1000;
+            time = round(1000*(time+2.2428/2))/1000;
         end
 
         %redo this for the cue onset events

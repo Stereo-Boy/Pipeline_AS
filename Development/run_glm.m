@@ -1,4 +1,4 @@
-function run_glm(mr_dir, TR, epi_nb, par_dir, tr_by_block, newDTname, grayFlag, notes_dir, verbose)
+function run_glm(mr_dir, TR, epi_nb, par_dir, event_analysis, tr_by_block, newDTname, grayFlag, notes_dir, verbose)
 
 % run_glm(mr_dir, TR, epi_nb, par_dir, tr_by_block, newDTname, grayFlag, notes_dir, verbose)
 %
@@ -10,6 +10,7 @@ function run_glm(mr_dir, TR, epi_nb, par_dir, tr_by_block, newDTname, grayFlag, 
 % verbose should be either verboseON (default) or verboseOFF
 % par_dir is where you have your par files stored (paradigm files)
 % epi_nb is the number of runs of data
+% if event_analysis (default=0) is 1, tr_by_block is defaulted to 0 and
 % tr_by_block is the number of TR by blocks in case of blocked design (0 if event-related)
 % grayFlag describes whether to run the GLM on all voxels (0) or only on the gray voxels (1)
 % If you use this flag, be sure to have transformed the time Series firts in Gray>Xform>Inplane>Volume>tSeries (all scans)
@@ -30,7 +31,8 @@ function run_glm(mr_dir, TR, epi_nb, par_dir, tr_by_block, newDTname, grayFlag, 
     if ~exist('mr_dir','var')||isempty(mr_dir), mr_dir = pwd; dispi('[run_glm] empty mr_dri defaulted to ', mr_dir, verbose); end;
     if ~exist('par_dir','var')||isempty(par_dir), par_dir = fullfile(mr_dir,'Stimuli/Parfiles/'); dispi('[run_glm] empty par_dir defaulted to ', par_dir, verbose); end;
     if ~exist('epi_nb','var')||isempty(epi_nb), epi_nb = 1; dispi('[run_glm] empty epi_nb defaulted to ', epi_nb, verbose); end;
-    if ~exist('tr_by_block','var')||isempty(tr_by_block), tr_by_block = 7; dispi('[run_glm] empty tr_by_block defaulted to ', tr_by_block, verbose); end;
+    if ~exist('event_analysis','var')||isempty(event_analysis), event_analysis = 0; dispi('[run_glm] empty event_analysis defaulted to ', 0, verbose); end;
+    if ~exist('tr_by_block','var')||isempty(tr_by_block), if event_analysis==1; tr_by_block = 0; else tr_by_block=7; end; dispi('[run_glm] empty tr_by_block defaulted to ', tr_by_block, verbose); end;
     if ~exist('grayFlag','var')||isempty(grayFlag), grayFlag = 0; dispi('[run_glm] empty grayFlag defaulted to ', grayFlag, verbose); end;
     if ~exist('newDTname','var')||isempty(newDTname), newDTname = 'GLM_default'; dispi('[run_glm] empty newDTname defaulted to ', newDTname, verbose); end;
     

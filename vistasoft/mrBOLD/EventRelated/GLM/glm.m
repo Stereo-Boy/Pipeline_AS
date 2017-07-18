@@ -167,7 +167,9 @@ model.dof = size(Y,1) - rank(X);       % trace(Rtmp);
 % This is the same as model.betas = pinv(Y)*X;
 % Which solves for Y = X*beta
 %
-model.betas = X\Y;    % hist(model.betas(1,:),100)
+%model.betas = X\Y;    % hist(model.betas(1,:),100)
+disp('[glm] We replaced line 170 by model.betas = pinv(X)*Y to avoid a rank deficient error')
+model.betas = pinv(X)*Y;
 
 % Compute residual error of initial fitting
 model.residual = Y - X*model.betas;
@@ -212,7 +214,11 @@ end
 % the samples at different temporal sample times.  Hence, the only
 % covariance that we extract is the covariance that is traced to the lack
 % of orthogonality between the predictors.
-model.voxIndepNoise = inv(X'* model.C * X);
+
+%model.voxIndepNoise = inv(X'* model.C * X);
+disp('[glm] We replaced line 218 to avoid a singular error')
+model.voxIndepNoise = pinv(X'* model.C * X);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Estimate Std. Deviation, SEMs for each beta value %
