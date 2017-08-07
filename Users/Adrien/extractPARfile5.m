@@ -1,4 +1,4 @@
-function extractPARfile5(stamFile, rootName)
+function extractPARfile5(stamFile, rootName, excludeNthRun, startCounter, inverted)
 % CORRECT VERSION
 % for Adrien (Full model with two configurations / two correlation and cue onset)
 % This version uses an event-related design with each 1/2 TR being described
@@ -16,9 +16,18 @@ function extractPARfile5(stamFile, rootName)
 % rootName is the root from which are par file names generated
 % Ex of use: extractPARfile2('mv40pre10_MRI_1.mat','epi') will read
 % mv40pre10_MRI_1.mat and generate par files called epi01, epi02...
+% excludeNthRun is a vector of runs number to exclude - the number is the n_th in the stam file, not the actual run nb in the stam file
+% when running pre2, if you want the epi names to start at a different number so that they match the par files
+% and follow the pre1 files, enter startCounter
+% if inverted parameter is 1, it means that LE was not red but green (0 otherwise LE = red)
+
 if ~exist('stamFile','var');error('Stam file not defined for extractPARfile function - .mat is important'); end
 if ~exist('rootName','var');disp('Default root epi name used: epi'); rootName = 'epi'; end
 if ~exist(stamFile,'file');error('Stam file not found for extractPARfile function'); end
+if ~exist('excludeNthRun','var');excludeNthRun=[]; dispi('Missing excludeNthRun defaulted to: ', excludeNthRun); end
+if ~exist('startCounter','var');startCounter=1; dispi('Missing startCounter defaulted to: ', startCounter); end
+if ~exist('inverted','var');inverted=0; dispi('Missing inverted defaulted to: ', inverted); end
+
 
 %Files need to exist
 check_files(cd, stamFile, 1, 1);
@@ -28,7 +37,7 @@ disp(['Loading following stam data file: ', stamFile])
     fixationDuration = 7*2.2428;
     dispi('Fixation duration is ', fixationDuration)
     load(stamFile)
-    inverted = 0; %if this parameter is 1, it means that LE was not red but green (0 otherwise LE = red)
+     %if this parameter is 1, it means that LE was not red but green (0 otherwise LE = red)
     if inverted ==1
         answer = input('Data seems inverted (LE sees green), be sure this is correct (1 = yes, 2 = no)');
         if answer>1
@@ -75,77 +84,84 @@ disp(['Loading following stam data file: ', stamFile])
         eventCodes = {'FX', 'L_COR', 'R_COR', 'L_ANT', 'R_ANT', 'CUE'} %NO slash in names
        % colorCodes = [[0.9 0 0]; [0 0.9 0]; [0 0.45 0]; [0 0 0.9]; [0 0 0.45]];
         
+    counter=startCounter;
     %for each run
     for run = 1:nbRuns
-        %select data from that run
-        data = dataSplit(:,:,run);
-        time = 0; %initialize time
-       
-        currentLine = 1; %initialize line of the design matrix in par file
+        if run==excludeNthRun
+            warni('This run was excluded! Run ',run)
+        else
+            %select data from that run
+            data = dataSplit(:,:,run);
 
-        %Start run with fixation
-        parfile = {time 0 eventCodes{1}}; % colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)      
-        time = time+fixationDuration;
-        currentLine = currentLine + 1;
+            time = 0; %initialize time
 
-        for i=1:size(data,1) %go through each data line
-            
-            %Given we split data between runs, the following case should not happen
-            %anymore (detection of change of run): so I comment it
-            %I keep a little code after, to detect if this is actually
-            %occuring because it would mean something went wrong...
-%             if i>1 && data(i,6)~=data(i-1,6) %DETECT CHANGE OF RUN (we assume a run covers always more than a single data line)
-%                 %finish with fixation
-%                     parfile(currentLine,:) = {time 0 eventCodes{1} colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)};
-%                     currentLine = currentLine + 1;
-%                     time = time+fixationDuration;
-%                 %start next run with fixation
-%                     parfile(currentLine,:) = {time 0 eventCodes{1} colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)};
-%                     currentLine = currentLine + 1;
-%                     time = time+fixationDuration;
-%             end
-            if i>1 && data(i,6)~=data(i-1,6) %DETECT CHANGE OF RUN
-                error('We detected a change of run in the epi data: that should not happen - check the code')
-            end
-            
-                
-                if inverted ==1 %deal with inverted eyes (this invert the configuration)
-                    code = 3-data(i,2);
-                else
-                    code = data(i,2);
+            currentLine = 1; %initialize line of the design matrix in par file
+
+            %Start run with fixation
+            parfile = {time 0 eventCodes{1}}; % colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)      
+            time = time+fixationDuration;
+            currentLine = currentLine + 1;
+
+            for i=1:size(data,1) %go through each data line
+
+                %Given we split data between runs, the following case should not happen
+                %anymore (detection of change of run): so I comment it
+                %I keep a little code after, to detect if this is actually
+                %occuring because it would mean something went wrong...
+    %             if i>1 && data(i,6)~=data(i-1,6) %DETECT CHANGE OF RUN (we assume a run covers always more than a single data line)
+    %                 %finish with fixation
+    %                     parfile(currentLine,:) = {time 0 eventCodes{1} colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)};
+    %                     currentLine = currentLine + 1;
+    %                     time = time+fixationDuration;
+    %                 %start next run with fixation
+    %                     parfile(currentLine,:) = {time 0 eventCodes{1} colorCodes(1,1) colorCodes(1,2) colorCodes(1,3)};
+    %                     currentLine = currentLine + 1;
+    %                     time = time+fixationDuration;
+    %             end
+                if i>1 && data(i,6)~=data(i-1,6) %DETECT CHANGE OF RUN
+                    error('We detected a change of run in the epi data: that should not happen - check the code')
                 end
-                
-                if data(i,4)==1  % correlated
-                    parfile(currentLine,:) = {time code eventCodes{code+1}};
-                    %move to next event line
-                end
-                if data(i,4)==2  %anti-correlated
-                    parfile(currentLine,:) = {time code+2 eventCodes{code+3}};
-                    %move to next event line
-                end                     
-                currentLine = currentLine + 1;
-            
-            time = round(1000*(time+2.2428/2))/1000;
-        end
 
-        %redo this for the cue onset events
-        time = fixationDuration;
-        for i=1:size(data,1) %go through each data line
-            if data(i,7)==1
-                parfile(currentLine,:) = {time 5 eventCodes{6}};
-                currentLine = currentLine + 1;
+
+                    if inverted ==1 %deal with inverted eyes (this invert the configuration)
+                        code = 3-data(i,2);
+                    else
+                        code = data(i,2);
+                    end
+
+                    if data(i,4)==1  % correlated
+                        parfile(currentLine,:) = {time code eventCodes{code+1}};
+                        %move to next event line
+                    end
+                    if data(i,4)==2  %anti-correlated
+                        parfile(currentLine,:) = {time code+2 eventCodes{code+3}};
+                        %move to next event line
+                    end                     
+                    currentLine = currentLine + 1;
+
+                time = round(1000*(time+2.2428/2))/1000;
             end
-            time = round(1000*(time+(2.2428/2)))/1000;
-        end
-        
-        %sort par file by time of onset
-        parfile=sortrows(parfile,1);
-        
-        %finish with fixation on last run
-        parfile(currentLine,:)  = {time 0 eventCodes{1}};
 
-        parfile
-        writeMatToFile(parfile,[rootName,sprintf('%02.f',runs(run)),'.par'])
+            %redo this for the cue onset events
+            time = fixationDuration;
+            for i=1:size(data,1) %go through each data line
+                if data(i,7)==1
+                    parfile(currentLine,:) = {time 5 eventCodes{6}};
+                    currentLine = currentLine + 1;
+                end
+                time = round(1000*(time+(2.2428/2)))/1000;
+            end
+
+            %sort par file by time of onset
+            parfile=sortrows(parfile,1);
+
+            %finish with fixation on last run
+            parfile(currentLine,:)  = {time 0 eventCodes{1}};
+
+            parfile
+            writeMatToFile(parfile,[rootName,sprintf('%02.f',counter),'.par'])
+            counter=counter+1;
+        end
     end
 end
 
