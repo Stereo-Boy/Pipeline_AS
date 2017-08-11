@@ -8,7 +8,7 @@ clear all
  mrVista
  open3ViewWindow
 
-map = '007 full_glm ANT ld 0.14.matt'
+map = '007 full_glm ANT ld 0.14.mat'
 meshL = 'lh_inflated_3L.mat'
 meshR = 'rh_inflated_3L.mat'
 mapFile=fullfile(cd,'mvpa',map);
