@@ -94,7 +94,10 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
     cfg.analysis = mvpa_analysis;
     cfg.results.overwrite = 1;
     cfg.results.output = {'accuracy', 'accuracy_minus_chance'};
-
+    cfg.searchlight.unit='voxels';
+    cfg.searchlight.radius ='4';
+    cfg.searchlight.spherical=0;
+    
     cfg.files.chunk=chunks;
     cfg.files.label=labels;
     all_chunks = unique(cfg.files.chunk);
@@ -121,7 +124,8 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
     passed_data.files = cfg.files;
     passed_data.hdr = ''; % we don't need a header, because we don't write img-files as output (but mat-files)
     passed_data.dim = [n_voxel, 1, 1]; % add dimension information of the original data
-
+    %[passed_data,cfg] = fill_passed_data(passed_data,cfg,labels,chunks);
+    
     %%import design and regressor names from spm dir
     %regressor_names = design_from_spm(beta_dir); % beta_dir is directory of SPM model
     %cfg = decoding_describe_data(cfg,{'left','right'},[1 -1],regressor_names,beta_dir);   % 1 -1 are arbitrary label numbers for red & green
@@ -150,6 +154,7 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
             dispi('Result is not saved in a map but in a file called wholebrain_Res', verbose)
             accuracy_minus_chance = results.accuracy_minus_chance.output;
             save(fullfile(mvpa_dir,'wholebrain_Res'), 'accuracy_minus_chance');
+            dispi('Moved results in mvpa folder with name ','wholebrain_Res')
         case('searchlight')
                 figure()
                 hist(results.accuracy_minus_chance.output,14)
@@ -164,5 +169,6 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
             end
             mapName='acc_chance_searchlight';
             save(fullfile(mvpa_dir,'acc_chance_searchlight'), 'map','mapName','mapPos');
+            dispi('Moved results in mvpa folder with name ',mapName)
     end
     

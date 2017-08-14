@@ -9,10 +9,13 @@ close all
 load(fullfile(sessionDir, 'mvpa',map))
 
 all_voxels = map{1}; %all voxels % decoding
+if numel(size(all_voxels))>2
+    all_voxels=all_voxels(:);
+end
 
 dispi('Median % decoding: ', median(all_voxels), '%')
 dispi('% of good voxels (with % decoding >10): ', 100*sum(all_voxels>10)./numel(all_voxels), '%')
-dispi('Nb of good voxels (with % variance explained >10): ', sum(all_voxels>10))
+dispi('Nb of good voxels (with % decoding >10): ', sum(all_voxels>10))
 dispi('Average % decoding for the best half of the voxels: ', mean(all_voxels(all_voxels>median(all_voxels))),'%')
 bestVoxPerc=5;
 limit = quantile(all_voxels,1-bestVoxPerc/100);
