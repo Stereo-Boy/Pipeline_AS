@@ -95,8 +95,9 @@ function mvpa_decoding(mr_dir, nbRuns, dtName, mvpa_dir, mvpa_analysis, gray_fla
     cfg.results.overwrite = 1;
     cfg.results.output = {'accuracy', 'accuracy_minus_chance'};
     cfg.searchlight.unit='voxels';
-    cfg.searchlight.radius ='4';
+    cfg.searchlight.radius =4;
     cfg.searchlight.spherical=0;
+    cfg.software = 'SPM12';
     
     cfg.files.chunk=chunks;
     cfg.files.label=labels;
