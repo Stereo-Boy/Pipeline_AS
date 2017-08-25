@@ -7,8 +7,8 @@ function motion_correction(mc_dir, expr, type, varargin)
 % type: cell array for type of reference for motion correction, one of
 % the following:
 %   'reffile' - uses reference 3d file. additional inputs can be specific
-%               filename and index of TR to create image (default is
-%               middle file and middle TR, respectively)
+%               filename (or index of files) and index of TR to create image 
+%               (default is middle file and middle TR, respectively)
 %   'refvol'  - uses reference TR of each input file. additional inputs
 %               can be index of TR (default is n/2)
 %   'meanvol' - uses mean volume across TRs of each input file. additional 
@@ -72,6 +72,8 @@ switch type{1}
             dispi('Using middle epi as a reference (default)',verbose)
             n_file = round(numel(files) / 2);
             ni = readFileNifti(files{n_file});
+        elseif isnumeric(type{2}), % index of files
+            ni = readFileNifti(files{type{2}});
         else % load from varargin{1}
             ni = readFileNifti(type{2});
         end
