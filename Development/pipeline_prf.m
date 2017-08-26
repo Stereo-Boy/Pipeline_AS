@@ -438,8 +438,4 @@ for x = find(~cellfun('isempty',regexp(fields,'.*_dir$'))),
     idx = idx(~cellfun(@(x)iscell(x),values(idx)));
     % check exist with dir and other fields
     check_exist(values{x}, values{idx}, verbose, err);
-<<<<<<< HEAD
-=======
-end
->>>>>>> 29f941b44c88ab9a701ce3abb0fad458754a7e0b
 end
