@@ -92,23 +92,11 @@ if ~exist('fld','var'), fld = ''; end;
 if ~exist('expr','var'), expr = ''; end;
 if ~exist('ck','var'), ck = ''; end;
 
-% dir files
-d = dir(fullfile(fld,expr));
-
-% if expr ends with file sep or fld contains *, directories
-if any(strfind(fld,'*'))||(~isempty(expr)&&strcmp(expr(end),filesep)),
-    d = d([d.isdir]);
-    ftype = 'folders';
-elseif ~isempty(fld) && ~isempty(expr), % files
-    d = d(~[d.isdir]);
-    ftype = 'files';
-else % check isdir(fld)
-    d = ones(isdir(fld));
-    ftype = 'folder';
-end
+% get_dir files
+files = get_dir(fld, expr);
 
 % get number of files/folders
-n = numel(d);
+n = numel(files);
 
 % if checking number
 if ~isempty(ck),
@@ -118,7 +106,7 @@ else % check for > 0
 end
 
 % set result
-result = sprintf('%s\n%s found: %d, expected: %d',fullfile(fld,expr),ftype,n,ck);
+result = sprintf('%s\nfiles/folders found: %d, expected: %d',fullfile(fld,expr),n,ck);
 
 % if false, warn/error
 if ~tf,

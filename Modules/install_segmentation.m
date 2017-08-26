@@ -62,6 +62,7 @@ cd(mr_dir);
 % installSegmentation parameters:
 query = []; % should trigger volume, gray or flat coords calculation if missing
 keepAllNodes = true; % for more flexibility
+disp(seg_dir)
 check_exist(seg_dir, '*t1_class*edited*', 1, 'errorON', verbose);
 dispi('Copying ',fullfile(seg_dir,'*t1_class*edited*'),' to ',ni_dir,verbose);
 copyfile(fullfile(seg_dir, '*t1_class*edited*'), ni_dir);
