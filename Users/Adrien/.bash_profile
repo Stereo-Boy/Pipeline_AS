@@ -17,8 +17,8 @@ test -e $FSLDIR && echo "Adding FSL is in path" || echo "FSL not found"
 PATH=${FSLDIR}/bin:${FSLDIR}/etc/fslconf/:${FSLDIR}:${PATH} 
 export FSLDIR PATH
 
-# Add Mricron path for dcn2nii 
-pathMRIcron=/Applications/MRIcroGL
+# Add MricroGL path for dcn2nii 
+pathMRIcron=/Users/adrien_chopin/Desktop/MRIcroGL
 # pathMRIcron =/usr/local/mricron
 test -e $pathMRIcron && echo "Adding  MRIcron to path" || echo "MRIcron not found"
 PATH=${pathMRIcron}:${PATH}
@@ -63,15 +63,6 @@ echo "Sourcing FreeSurferEnv.sh and fsl.sh"
 
 echo "PATH is defined to ${PATH}"
 
-
-
-
-
-
-
-
-
-
 
 # Setting PATH for Python 3.4
 # The orginal version is saved in .bash_profile.pysave

@@ -99,7 +99,7 @@ try
     
     %load subject parameters
     paramFile=fullfile(subj_dir, 'parameterFile.m');
-    if strcmp(which('parameterFile.m'),paramFile)==0; erri('Incorrect parameter file to load');
+    if strcmp(fullfile(cd,'parameterFile.m'),paramFile)==0; erri('Incorrect parameter file to load');
     else       dispi('Loading parameter file: ', which('parameterFile.m'),verbose); param=parameterFile(subj_dir, verbose);
         cellfun(@(x,y)assignin('caller', x, y), fieldnames(param),struct2cell(param)); %this will assign each field in param to a variable with the same name
     end
