@@ -68,7 +68,7 @@ check_exist(seg_dir,[subjID,'_nu_RAS_NoRS.nii.gz'],1,verbose,'errorON');
 dispi('Setting up files for itkGray', verbose);
 dispi('Starting fs_ribbon2itk to convert nifti file to itkGray class file', verbose);
 % check for t1_class file, otherwise run fs_ribbon2itk
-if ~exist(fulfile(seg_dir,'t1_class.nii.gz'),'file')
+if ~exist(fullfile(seg_dir,'t1_class.nii.gz'),'file')
     % run fs_ribbon2itk
     fs_ribbon2itk(subjID);
     % copy file to seg_dir

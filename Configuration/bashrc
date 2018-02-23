@@ -22,10 +22,18 @@ fi
 								    
 
 #------------------------------------------
-# on  at  243, user adrienchopin 
+
+# on  at 1716, adrien_chopin  
+
 # added some FSL setup:
+
 FSLDIR=/usr/local/fsl
+
 PATH=${FSLDIR}/bin:${PATH}
+
 export FSLDIR PATH
+
 . ${FSLDIR}/etc/fslconf/fsl.sh
+
 #------------------------------------------
+

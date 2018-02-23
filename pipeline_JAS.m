@@ -6,6 +6,9 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose, option
 % stepList2run is a list of numbers corresponding to the possible steps to
 % run. If stepList2run is not defined, it shows this help.
 %
+% In the following code, we refer to the high-resolution anatomical files
+% as mprage, and to the low-resolution inplane anatomical files as gems
+%
 % Steps available to run:
 %   0. All of the below steps
 %   1. mprage: nifti conversion (dcm2niix from MRIcron)
@@ -16,12 +19,12 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose, option
 %   6. retino epi/gems: motion correction (FSL)
 %   7. retino epi: MC parameter check and artefact removal (FSL)
 %   8. retino epi/gems: nifti header repair
-%   9. retino epi/gems: initialization of session (mrVista)
-%   10. retino epi/gems: alignment of inplane and volume (FSL/mrVista)
-%   11. retino epi: segmentation installation (mrVista)
-%   12. retino/epi: mesh creation (mrVista)
-%   13. retino epi: pRF model (mrVista)
-%   14. retino epi: mesh visualization of pRF values (mrVista)
+%   9. mrVista session: initialization of session (mrVista)
+%   10. mrVista session: alignment of inplane and volume (FSL/mrVista)
+%   11. mrVista session: segmentation installation (mrVista)
+%   12. mrVista session: mesh creation (mrVista)
+%   13. mrVista session: pRF model (mrVista)
+%   14. mrVista session: mesh visualization of pRF values (mrVista)
 
 % THE FOLLOWING STEPS ARE NOT IMPLEMENTED YET
 %   15. retino epi: extraction of flat projections
@@ -87,11 +90,12 @@ try
 
 
     % MENU
-    while (~exist('stepList2run', 'var')|isempty(stepList2run)|isnumeric(stepList2run)==0|stepList2run<=0|stepList2run>14)
+    while (~exist('stepList2run', 'var')|isempty(stepList2run)|isnumeric(stepList2run)==0|stepList2run<0|stepList2run>14)
         help(mfilename);
         stepList2run=input('Enter the numbers of the desired steps, potentially between brackets: ');
     end
-    
+    if stepList2run==0; stepList2run=1:14; dispi('Running steps: ',stepList2run); end
+        
     dispi('Running pipeline_JAS with additionnal arguments: notes_dir: ', notes_dir,' /optionalArg: ', optionalArg,verbose)
     dispi('Subject ID is: ', subjID,' and subject folder is: ', subj_dir, verbose)
     dispi('Steps to run: ',stepList2run, verbose)
@@ -129,7 +133,7 @@ try
         switch step
             case {1}   %   1. mprage: nifti conversion (dcm2niix)
                 dispi(repmat('*',1,20),' Description of the step ',step, ': Nifti conversion with dcm2niix from ',mpr_dicom_dir, ' to ', mpr_ni_dir, verbose)
-                dispi('DICOM mprage files should be in a folder itself in a folder called ',mpr_dicom_dir, ' in the subject folder',verbose)
+                dispi('DICOM mprage files should be in a mprage-named folder itself in a folder called ',mpr_dicom_dir, ' in the subject folder',verbose)
                 checkSourceFolders(mpr_dicom_dir, verbose)
                 dcm2niiConvert(mpr_dicom_dir, '*/', 1, mprageSliceNb, mpr_ni_dir, verbose)    %at the moment, only works with one mprage folder     
                     
