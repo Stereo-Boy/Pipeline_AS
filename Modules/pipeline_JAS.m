@@ -311,12 +311,12 @@ try
                 if reference==4; dispi('Warning: here we have motion-correct the GEMS file to the first EPI so that the ipath to the GEMS dicom folder is incorrect', verbose);
                     dispi('There is no way to convert the nifti back to DICOM but it may be not a big deal given only the (untouched) header is necessary for that file', verbose)
                 end
-                if isfield(o,'align_steps')==0; o.align_steps = 1:5; end
-                xform = alignment(ret_mr_dir, fullfile(ret_mr_ni_dir,mprageFile), fullfile(ret_mr_ni_dir, gemsFile), ipath_dir, o.align_steps);
+                if exist('align_steps','var')==0; align_steps = 1:5; end
+                xform = alignment(ret_mr_dir, fullfile(ret_mr_ni_dir,mprageFile), fullfile(ret_mr_ni_dir, gemsFile), ipath_dir, align_steps);
                 dispi('Resulting xform matrix:',verbose)
                 disp(xform)
                 [averageCorr, sumRMSE]=extractAlignmentPerfStats(ret_mr_dir, retinoGemsSliceNb, verbose);
-                if isnan(averageCorr)||averageCorr<0.7, errori('Alignment failed - correlation is <0.7, please run a different alignment procedure', verbose);   end
+                if isnan(averageCorr)||averageCorr<0.7, erri('Alignment failed - correlation is <0.7, please run a different alignment procedure or try manual one with rxAlign', verbose);   end
          
         case {11}  %   11. retino epi: segmentation installation (mrVista)
              dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: install of segmentation (mrVista) ------------------------------', verbose) 

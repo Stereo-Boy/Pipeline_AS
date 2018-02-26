@@ -1,4 +1,4 @@
-function install_segmentation(mr_dir, seg_dir, ni_dir, varargin)
+function install_segmentation(mr_dir, seg_dir, ni_dir, verbose, n_gray)
 % install_segmentation(mr_dir, seg_dir, ni_dir, ...)
 % Installs volume anatomy and an existing cortical segmentation into an existing mrSESSION
 %
@@ -22,7 +22,7 @@ function install_segmentation(mr_dir, seg_dir, ni_dir, varargin)
 % Kelly Byrne | Silver Lab | UC Berkeley | 2015-09-27 
 % modified from code written by the Winawer lab and available at: https://wikis.nyu.edu/display/winawerlab/Install+segmentation
 %
-% requires the VISTA Lab's Vistasoft package - available at: https://github.com/vistalab/vistasoft
+% requires the VISTA Lab's Vistasoft package - available at: https://github.com/vistalab/vistasoft
 
 % init vars
 if ~exist('mr_dir','var')||isempty(mr_dir), 
@@ -37,18 +37,25 @@ if ~exist('ni_dir','var')||isempty(ni_dir),
     ni_dir = fullfile(pwd,'nifti'); 
     dispi('empty ni_dir in install_segmentation defaulted to ', ni_dir);
 end
-
-% init defaults
-vars = {'verbose', 'n_gray'};
-defaults = {'verboseON', 5};
-
-% set defaults if needed
-n_idx = ~ismember(vars, varargin(1:2:end));
-addvars = cat(1, vars(n_idx), defaults(n_idx));
-varargin = cat(2, varargin, addvars(:)');
-for x = 1:2:numel(varargin),
-    eval([varargin{x} '= varargin{x+1};']);
+if ~exist('verbose','var')||isempty(verbose), 
+    verbose = 'verboseON'; 
 end
+if ~exist('n_gray','var')||isempty(n_gray), 
+    n_gray = 5; 
+    dispi('empty n_gray in install_segmentation defaulted to ', n_gray);
+end
+
+% % init defaults
+% vars = {'verbose', 'n_gray'};
+% defaults = {'verboseON', 5};
+% 
+% % set defaults if needed
+% n_idx = ~ismember(vars, varargin(1:2:end))
+% addvars = cat(1, vars(n_idx), defaults(n_idx))
+% varargin = cat(2, varargin, addvars(:)')
+% for x = 1:2:numel(varargin),
+%     eval([varargin{x} '= varargin{x+1};']);
+% end
 
 % set initial dir
 initialDir = pwd;
@@ -63,10 +70,12 @@ cd(mr_dir);
 query = []; % should trigger volume, gray or flat coords calculation if missing
 keepAllNodes = true; % for more flexibility
 disp(seg_dir)
-check_exist(seg_dir, '*t1_class*edited*', 1, 'errorON', verbose);
-dispi('Copying ',fullfile(seg_dir,'*t1_class*edited*'),' to ',ni_dir,verbose);
-copyfile(fullfile(seg_dir, '*t1_class*edited*'), ni_dir);
-seg_file = get_dir(ni_dir, '*t1_class*edited*', 1);
+
+check_exist(seg_dir, '*edited*', 1, 'errorON', verbose);
+dispi('Copying ',fullfile(seg_dir,'*edited*'),' to ',ni_dir,verbose);
+copyfile(fullfile(seg_dir, '*edited*'), ni_dir);
+seg_file = get_dir(ni_dir, '*edited*', 1);
+
 % needs following structure: left class, right class, empty gray left, empty right gray 
 segFilePaths = {seg_file, seg_file, '', ''};
 

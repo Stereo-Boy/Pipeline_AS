@@ -83,6 +83,9 @@ function o=parameterFile_template_glm(subj_dir, verbose)
     o.retinoGemsSliceNb = 38;           % nb of slices in the gems scan
     o.retinoGems_slice_duration = 0;	%(0 avoid mrvista slice timing correction)
     
+ % alignment (inplane-volume)
+    o.align_steps = 1:5;
+    
  % mesh parameters
     o.smoothingIterations = 600; %nb of iteration for smoothing when inflating mesh
     
