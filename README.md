@@ -3,4 +3,4 @@
 _Authors: Adrien Chopin, Justin Theiss, Sara Popham, Kelly Byrne and Michael Silver_
 2014-2018
 ***
-Please read the wiki section on github!
+Please read the wiki section on github to get started: https://github.com/Stereo-Boy/Pipeline_AS/wiki
