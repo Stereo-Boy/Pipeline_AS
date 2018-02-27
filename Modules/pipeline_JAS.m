@@ -152,9 +152,9 @@ try
                     dispi('However, you decided to skip that step',verbose);
                     success=check_files(mpr_segm_dir,'*edited*.nii.gz', 1, 0, verbose); %looking for 1 edited nifti file
                     if success==0
-                       dispi('and the edited file is missing, therefore we will simply rename the unedited file adding edited in name',verbose);
+                       dispi('and the edited file is missing, therefore we will simply rename the unedited file adding fake_edited in name',verbose);
                        check_files(mpr_segm_dir,'*class*.nii.gz', 1, 1, verbose); 
-                       t1classFile=get_dir(mpr_segm_dir, '*class*.nii.gz', 1); [a b c]=fileparts(t1classFile); editedFile=fullfile(a,['edited_',b,c]);
+                       t1classFile=get_dir(mpr_segm_dir, '*class*.nii.gz', 1); [a b c]=fileparts(t1classFile); editedFile=fullfile(a,['fake_edited_',b,c]);
                        [success,message]=copyfile(t1classFile, editedFile);
                        if success; dispi('Renamed to ', editedFile, verbose);else erri('Renaming to: ',editedFile,' failed: ', message); end
                        check_files(mpr_segm_dir,'*edited*.nii.gz', 1, 1, verbose); %looking for 1 edited nifti file
