@@ -30,6 +30,21 @@ function o=parameterFile_template_retino(subj_dir, verbose)
        o.ret_mr_dir = fullfile(subj_dir,'06_retino_mrSession');
        o.ret_mr_ni_dir=fullfile(o.ret_mr_dir,'nifti');
        o.ret_mr_mesh_dir=fullfile(o.ret_mr_dir,'Mesh');
+       
+ % check if folder names contain spaces   
+ 
+       check_any_spaces(o.mpr_dicom_dir);
+       check_any_spaces(o.mpr_ni_dir);
+       check_any_spaces(o.mpr_segm_dir);
+       check_any_spaces(o.mpr_niFixed_dir);
+       
+       check_any_spaces(o.ret_dicom_dir);
+       check_any_spaces(o.ret_ni_dir);
+       check_any_spaces(o.ret_mc_dir);
+       check_any_spaces(o.ret_mcFixed_dir);
+       check_any_spaces(o.ret_mr_dir);
+       check_any_spaces(o.ret_mr_ni_dir);
+       check_any_spaces(o.ret_mr_mesh_dir);
         
 %         expDICOMfolder = fullfile(subj_dir,'01c_epi_exp_DICOM');
 %         expPARfolder = fullfile(subj_dir,'01d_epi_exp_PAR');

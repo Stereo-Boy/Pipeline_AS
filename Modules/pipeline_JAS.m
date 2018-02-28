@@ -78,7 +78,7 @@ try
      
     %check for subj_dir and open an interactive window if not defined or empty
     if ~exist('subj_dir','var')||~exist(subj_dir, 'dir');   dispi('subj_dir not defined: prompt', verbose);  subj_dir = uigetdir(pwd, 'Choose folder for analysis:');     end;
-    cd(check_folder(subj_dir, 1, verbose));
+    cd(check_folder(subj_dir, 1, verbose)); check_any_spaces(subj_dir);
     
     %check for subjID
     if ~exist('subjID','var')||isempty(subjID); dispi('subjID not defined: we deduce it from directory.');[~, subjID] = fileparts(subj_dir); end;
