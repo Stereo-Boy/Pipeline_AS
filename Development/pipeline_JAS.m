@@ -97,6 +97,13 @@ try
     dispi('Steps to run: ',stepList2run, verbose)
     dispi(' --------------------------  Pipeline initialization:', dateTime,' ----------------------------------------', verbose)
     
+    % Add spm files to the path - adding it here rather than in the startup file avoids bugs and
+    % conflict with spm functions in vistasoft folder
+    spmPath = '~/Desktop/spm12'; % update this with your path
+    if (exist(spmPath,'dir') ~= 7); warning('spm does not exist!'); end
+    path(path, spmPath); %path to your spm folder BUT not all subfolders because it is not recommended
+    disp('Loaded path to spm folder at the bottom of the search path list.')
+
     %load subject parameters
     paramFile=fullfile(subj_dir, 'parameterFile.m');
     if strcmp(which('parameterFile.m'),paramFile)==0; erri('Incorrect parameter file to load');
