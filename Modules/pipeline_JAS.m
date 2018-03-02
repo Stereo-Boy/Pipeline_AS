@@ -6,6 +6,9 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose, option
 % stepList2run is a list of numbers corresponding to the possible steps to
 % run. If stepList2run is not defined, it shows this help.
 %
+% In the following code, we refer to the high-resolution anatomical files
+% as mprage, and to the low-resolution inplane anatomical files as gems
+%
 % Steps available to run:
 %   0. All of the below steps
 %   1. mprage: nifti conversion (dcm2niix from MRIcron)
@@ -16,12 +19,12 @@ function pipeline_JAS(stepList2run, subj_dir, subjID, notes_dir, verbose, option
 %   6. retino epi/gems: motion correction (FSL)
 %   7. retino epi: MC parameter check and artefact removal (FSL)
 %   8. retino epi/gems: nifti header repair
-%   9. retino epi/gems: initialization of session (mrVista)
-%   10. retino epi/gems: alignment of inplane and volume (FSL/mrVista)
-%   11. retino epi: segmentation installation (mrVista)
-%   12. retino/epi: mesh creation (mrVista)
-%   13. retino epi: pRF model (mrVista)
-%   14. retino epi: mesh visualization of pRF values (mrVista)
+%   9. mrVista session: initialization of session (mrVista)
+%   10. mrVista session: alignment of inplane and volume (FSL/mrVista)
+%   11. mrVista session: segmentation installation (mrVista)
+%   12. mrVista session: mesh creation (mrVista)
+%   13. mrVista session: pRF model (mrVista)
+%   14. mrVista session: mesh visualization of pRF values (mrVista)
 
 % THE FOLLOWING STEPS ARE NOT IMPLEMENTED YET
 %   15. retino epi: extraction of flat projections
@@ -75,7 +78,7 @@ try
      
     %check for subj_dir and open an interactive window if not defined or empty
     if ~exist('subj_dir','var')||~exist(subj_dir, 'dir');   dispi('subj_dir not defined: prompt', verbose);  subj_dir = uigetdir(pwd, 'Choose folder for analysis:');     end;
-    cd(check_folder(subj_dir, 1, verbose));
+    cd(check_folder(subj_dir, 1, verbose)); check_any_spaces(subj_dir);
     
     %check for subjID
     if ~exist('subjID','var')||isempty(subjID); dispi('subjID not defined: we deduce it from directory.');[~, subjID] = fileparts(subj_dir); end;
@@ -87,11 +90,12 @@ try
 
 
     % MENU
-    while (~exist('stepList2run', 'var')|isempty(stepList2run)|isnumeric(stepList2run)==0|stepList2run<=0|stepList2run>14)
+    while (~exist('stepList2run', 'var')|isempty(stepList2run)|isnumeric(stepList2run)==0|stepList2run<0|stepList2run>14)
         help(mfilename);
         stepList2run=input('Enter the numbers of the desired steps, potentially between brackets: ');
     end
-    
+    if stepList2run==0; stepList2run=1:14; dispi('Running steps: ',stepList2run); end
+        
     dispi('Running pipeline_JAS with additionnal arguments: notes_dir: ', notes_dir,' /optionalArg: ', optionalArg,verbose)
     dispi('Subject ID is: ', subjID,' and subject folder is: ', subj_dir, verbose)
     dispi('Steps to run: ',stepList2run, verbose)
@@ -106,7 +110,7 @@ try
 
     %load subject parameters
     paramFile=fullfile(subj_dir, 'parameterFile.m');
-    if strcmp(which('parameterFile.m'),paramFile)==0; erri('Incorrect parameter file to load');
+    if strcmp(fullfile(cd,'parameterFile.m'),paramFile)==0; erri('Incorrect parameter file to load');
     else       dispi('Loading parameter file: ', which('parameterFile.m'),verbose); param=parameterFile(subj_dir, verbose);
         cellfun(@(x,y)assignin('caller', x, y), fieldnames(param),struct2cell(param)); %this will assign each field in param to a variable with the same name
     end
@@ -136,7 +140,7 @@ try
         switch step
             case {1}   %   1. mprage: nifti conversion (dcm2niix)
                 dispi(repmat('*',1,20),' Description of the step ',step, ': Nifti conversion with dcm2niix from ',mpr_dicom_dir, ' to ', mpr_ni_dir, verbose)
-                dispi('DICOM mprage files should be in a folder itself in a folder called ',mpr_dicom_dir, ' in the subject folder',verbose)
+                dispi('DICOM mprage files should be in a mprage-named folder itself in a folder called ',mpr_dicom_dir, ' in the subject folder',verbose)
                 checkSourceFolders(mpr_dicom_dir, verbose)
                 dcm2niiConvert(mpr_dicom_dir, '*/', 1, mprageSliceNb, mpr_ni_dir, verbose)    %at the moment, only works with one mprage folder     
                     
@@ -155,9 +159,9 @@ try
                     dispi('However, you decided to skip that step',verbose);
                     success=check_files(mpr_segm_dir,'*edited*.nii.gz', 1, 0, verbose); %looking for 1 edited nifti file
                     if success==0
-                       dispi('and the edited file is missing, therefore we will simply rename the unedited file adding edited in name',verbose);
+                       dispi('and the edited file is missing, therefore we will simply rename the unedited file adding fake_edited in name',verbose);
                        check_files(mpr_segm_dir,'*class*.nii.gz', 1, 1, verbose); 
-                       t1classFile=get_dir(mpr_segm_dir, '*class*.nii.gz', 1); [a b c]=fileparts(t1classFile); editedFile=fullfile(a,['edited_',b,c]);
+                       t1classFile=get_dir(mpr_segm_dir, '*class*.nii.gz', 1); [a b c]=fileparts(t1classFile); editedFile=fullfile(a,['fake_edited_',b,c]);
                        [success,message]=copyfile(t1classFile, editedFile);
                        if success; dispi('Renamed to ', editedFile, verbose);else erri('Renaming to: ',editedFile,' failed: ', message); end
                        check_files(mpr_segm_dir,'*edited*.nii.gz', 1, 1, verbose); %looking for 1 edited nifti file
@@ -314,11 +318,12 @@ try
                 if reference==4; dispi('Warning: here we have motion-correct the GEMS file to the first EPI so that the ipath to the GEMS dicom folder is incorrect', verbose);
                     dispi('There is no way to convert the nifti back to DICOM but it may be not a big deal given only the (untouched) header is necessary for that file', verbose)
                 end
-                xform = alignment(ret_mr_dir, fullfile(ret_mr_ni_dir,mprageFile), fullfile(ret_mr_ni_dir, gemsFile), ipath_dir, [1:5]);
+                if exist('align_steps','var')==0; align_steps = 1:5; end
+                xform = alignment(ret_mr_dir, fullfile(ret_mr_ni_dir,mprageFile), fullfile(ret_mr_ni_dir, gemsFile), ipath_dir, align_steps);
                 dispi('Resulting xform matrix:',verbose)
                 disp(xform)
                 [averageCorr, sumRMSE]=extractAlignmentPerfStats(ret_mr_dir, retinoGemsSliceNb, verbose);
-                if isnan(averageCorr)||averageCorr<0.7, errori('Alignment failed - correlation is <0.7, please run a different alignment procedure', verbose);   end
+                if isnan(averageCorr)||averageCorr<0.7, erri('Alignment failed - correlation is <0.7, please run a different alignment procedure or try manual one with rxAlign', verbose);   end
          
         case {11}  %   11. retino epi: segmentation installation (mrVista)
              dispi(repmat('*',1,20),' Description of the step ',step, ': retino epi/gems: install of segmentation (mrVista) ------------------------------', verbose) 
