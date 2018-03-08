@@ -24,25 +24,12 @@ function maskNii = create_ROI_inplane_mask(inplanePath, roiPath)
 % read ROI file and change corresponding data values in mask to 1
     load(roiPath);
     
-%    for i = 1:3:numel(ROI.coords)
-%        x = ROI.coords(i); % x is Ant>Post
-%       y = ROI.coords(i+1); % y is Left->Right
-%        z = ROI.coords(i+2); % z is Inf->Sup
-%        maskNii.data(dims(1) - y, x, z) = int16(1);
-%    end
-
-    maskNiiLin = maskNii.data(:);
-    maskNiisize = size(maskNii.data);
     for i = 1:3:numel(ROI.coords)
         x = ROI.coords(i); % x is Ant>Post
-        y = ROI.coords(i+1); % y is Left->Right
+       y = ROI.coords(i+1); % y is Left->Right
         z = ROI.coords(i+2); % z is Inf->Sup
-        index = sub2ind(maskNiisize, dims(1) - y, x, z);
-        
-        maskNiiLin(index) = int16(1);
+        maskNii.data(dims(1) - y, x, z) = int16(1);
     end
-    
-%    maskNii.data = reshape(maskNii.data, dims(1), dims(2), dims(3));
 
 % save mask in file
     [p,n,e]  = fileparts(inplanePath);
