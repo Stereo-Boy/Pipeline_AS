@@ -32,7 +32,6 @@ function o=parameterFile_template_retino(subj_dir, verbose)
        o.ret_mr_mesh_dir=fullfile(o.ret_mr_dir,'Mesh');
        
  % check if folder names contain spaces   
- 
        check_any_spaces(o.mpr_dicom_dir);
        check_any_spaces(o.mpr_ni_dir);
        check_any_spaces(o.mpr_segm_dir);
@@ -79,7 +78,7 @@ function o=parameterFile_template_retino(subj_dir, verbose)
     o.slice_dim = 3;             % necessary to correct nifti header
     
  % correction of gray mesh irregularities 
-    o.itkgray_skip = 1;          % whether to skip (1) or not (0) the step for correction of gray mesh irregularities
+    o.itkgray_skip = 0;          % whether to skip (1) or not (0) the step for correction of gray mesh irregularities
  
  % mprage
     o.mprageSliceNb = 160;                                  % nb of slices in the mprage scan
