@@ -16,7 +16,7 @@ function maskNii = create_ROI_volume_mask(volumePath, roiPath)
 % create new nifti file for mask in maskPath
     maskNii = readFileNifti(volumePath);
     
-% retrieve dimensions of inplane file
+% retrieve dimensions of volume file
     dims = maskNii.dim;
 % set mask data to 0's
     maskNii.data = int16(zeros(dims(1), dims(2), dims(3)));
