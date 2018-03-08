@@ -1,13 +1,17 @@
 function filename = par2onsets(parFile, varargin)
 % filename = par2onsets(parFile,'param1','value1','param2','value2',...)
 % Create onsets (.mat) file from par (.par) file (but any text file should 
-% work). The onsets file can be used in SPM software.
+% work). The onsets file can be used in SPM software. Durations certainly need to be provided
+% in a separate parameter given mrVista PAR file typically do not provide the events or epoch durations
+% Alternately, provide the special code 'specialCode' for the parameter 'durations' to be able to deduce
+% the duration from the code column (fill the section below)
 % 
 % Inputs:
 % parFile - string filename of par (or any text file) containing paradigm
 % information in rows.
-% Options:
-% 'column_names' - cell array of column names
+% Options
+% 'column_names' - cell array of column names - this will typically contain the columns
+% onsets, durations, and (conditions) names except if there are provided in the optional parameter below
 % 'onsets' (optional) - cell array of onsets for manual input
 % 'durations' (optional) - cell array of durations for manual input
 % 'names' (optional) - cell array of names for manual input
@@ -45,6 +49,18 @@ if any(strcmp(varargin, 'filename')),
     filename = varargin{find(strcmp(varargin,'filename'),1)+1};
 end
 
+if strcmp(durations,'specialCode') %deduce the durations from the code column with the following mapping:
+    % (replace with your experiment values) - careful code and idx of durations are off by 1
+    duration(1) = 15.6996;    % code == 0
+    duration(2) = 15.6996/28; % code == 1
+    duration(3) = 15.6996/28; % code == 2
+    duration(4) = 15.6996/28; % code == 3
+    duration(5) = 15.6996/28; % code == 4
+    duration(6) = 15.6996/28; % code == 5
+    durationFlag=1;
+    durations=[];
+end
+
 % get text from file
 txt = fileread(parFile);
 
@@ -60,11 +76,17 @@ lines(counts < max(counts)) = [];
 onsets_idx = find(strcmp(column_names,'onsets'),1);
 durations_idx = find(strcmp(column_names,'durations'),1);
 names_idx = find(strcmp(column_names,'names'),1);
+codes_idx = find(strcmp(column_names,'codes'),1);
+total_durations=[];
 
 % for each line, get total onsets, druations, and names
 for x = 1:numel(lines),
     if ~isempty(onsets_idx),
         total_onsets{x} = str2double(lines{x}{onsets_idx});
+    end
+    if durationFlag==1
+            code=str2double(lines{x}{codes_idx});
+            total_durations{x} = duration(code+1);
     end
     if ~isempty(durations_idx),
         total_durations{x} = str2double(lines{x}{durations_idx});
@@ -88,10 +110,10 @@ for x = 1:numel(names),
         onsets{x} = [total_onsets{idxs}]';
     end
     % if no durations_idx, create from difference of each onset
-    if isempty(durations_idx),
+    if isempty(total_durations),
         total_durations = arrayfun(@(x){x}, diff([total_onsets{:}]));
     end
-    if ~exist('durations','var')|| x > numel(durations),
+    if (~exist('durations','var'))|| durationFlag==1
         durations{x} = [total_durations{idxs}]';
     end
 end

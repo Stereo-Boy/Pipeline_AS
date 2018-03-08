@@ -8,7 +8,7 @@ clear all
  mrVista
  open3ViewWindow
 
-thisMap = '009a_full_EA_INP - COR.mat';
+thisMap = '009b_full_EA_INP - ANT.mat';
 [a, b, ext] = fileparts(thisMap);
 if not(strcmp(ext,'.mat')); thisMap=[thisMap,'.mat'];end    
 disp(thisMap)

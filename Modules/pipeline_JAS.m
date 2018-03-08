@@ -269,7 +269,7 @@ try
                 dispi('Suspicious TR detected are:', verbose)
                 disp(bad_trs)
                 % TO DO HERE:  Let's move all confounds files and images to a different folder for clarity  
-                
+                % Use development function check_outliers to address the actual outliers
           case {8} % 8. retino epi/gems: nifti header repair
                dispi(repmat('*',1,20),' Description of the step ',step, ': Repair of epi/gems nifti headers from ',ret_mc_dir,' to ',ret_mcFixed_dir, verbose)
                if nifti_fix_skip; warni('This step should be skipped because nifti_fix_skip = 1 but we proceed anyway', verbose); end
