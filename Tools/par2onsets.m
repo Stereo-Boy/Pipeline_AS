@@ -103,16 +103,15 @@ if iscell(parFile)==1
     end
 else
     dispi('Loading one file of data');   
-    lines=extractFile(parFile);
+    lines=extractFile(parFile,0,onsets_idx);
 end
-lines
 dispi('We loaded ',numel(lines), ' lines of event data')
 
-
+lines
 
 % get name, onset and duration of all events
     if ~isempty(onsets_idx),
-        total_onsets = str2double(lines(:,onsets_idx))';
+        total_onsets = cell2mat(lines(:,onsets_idx))';
     end
     if ~isempty(durations_idx),
         total_durations = str2double(lines(:,durations_idx))';
