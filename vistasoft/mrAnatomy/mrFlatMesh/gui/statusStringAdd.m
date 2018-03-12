@@ -4,7 +4,7 @@ function newStatusString=statusStringAdd(handle,message)
 %
 %Author: Wade
 %Purpose:
-%  Adds the current message to the staus box defined by the handle
+%  Adds the current message to the status box defined by the handle
 %  Used in unfoldMeshFromGUI.  It should probably be internal to that
 %  program. (BW).
 %
