@@ -36,17 +36,18 @@ disp('Freesurfer paths and ENV variables fully configurated (loaded on top)')
 setenv('PERL5LIB', '/Applications/freesurfer/mni/Library/Perl/Updates/5.10.0');
 
 %quick sanity checks
-    spmPath = '~/Desktop/spm12';
+    %spmPath = '~/Desktop/spm12';
     %knkPath = '~/Desktop/KNK';
     mricron = '~/Desktop/MRIcroGL';
     
-    if (exist(spmPath,'dir') ~= 7); warning('Startup - spm does not exist'); end
+    %if (exist(spmPath,'dir') ~= 7); warning('Startup - spm does not exist'); end
     %if (exist(knkPath,'dir') ~= 7); warning('Startup - KNK does not exist'); end
     if (exist(mricron,'dir') ~= 7); warning('Startup - MRIcroGL does not exist'); end
     
 %Add spm files to the path
-path(genpath(spmPath), path); %path to your spm folder
-disp('Loaded path to spm files on top.')
+%path(genpath(spmPath), path); %path to your spm folder
+%disp('Loaded path to spm files on top.')
+disp('spm files NOT LOADED - will be loaded in pipeline_JAS.')
 
 %Add KNK files to the path (only required if you use the Winawer lab procedure for fine alignment)
 %path(genpath(knkPath),path);

@@ -101,6 +101,13 @@ try
     dispi('Steps to run: ',stepList2run, verbose)
     dispi(' --------------------------  Pipeline initialization:', dateTime,' ----------------------------------------', verbose)
     
+    % Add spm files to the path - adding it here rather than in the startup file avoids bugs and
+    % conflict with spm functions in vistasoft folder
+    spmPath = '~/Desktop/spm12'; % update this with your path
+    if (exist(spmPath,'dir') ~= 7); warning('spm does not exist!'); end
+    path(path, spmPath); %path to your spm folder BUT not all subfolders because it is not recommended
+    disp('Loaded path to spm folder at the bottom of the search path list.')
+
     %load subject parameters
     paramFile=fullfile(subj_dir, 'parameterFile.m');
     if strcmp(fullfile(cd,'parameterFile.m'),paramFile)==0; erri('Incorrect parameter file to load');
@@ -262,7 +269,7 @@ try
                 dispi('Suspicious TR detected are:', verbose)
                 disp(bad_trs)
                 % TO DO HERE:  Let's move all confounds files and images to a different folder for clarity  
-                
+                % Use development function check_outliers to address the actual outliers
           case {8} % 8. retino epi/gems: nifti header repair
                dispi(repmat('*',1,20),' Description of the step ',step, ': Repair of epi/gems nifti headers from ',ret_mc_dir,' to ',ret_mcFixed_dir, verbose)
                if nifti_fix_skip; warni('This step should be skipped because nifti_fix_skip = 1 but we proceed anyway', verbose); end
