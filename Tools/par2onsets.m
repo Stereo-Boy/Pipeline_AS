@@ -21,7 +21,8 @@ function output = par2onsets(parFile, column_names,varargin)
 % parameter or given as a column in parFile)
 % 'names' (optional) - cell array of names for manual input
 % 'runDuration' (optional) - total duration of a run (they have to be all the same) in the units
-% of the onsets and durations (seconds or TR)
+% of the onsets and durations (seconds or TR) - be careful, if you have a
+% fixation period on the first run only, you cannot use runDuration 
 % 'output' (optional) - string filename to output for .mat file 
 %   [default is parFile with .mat ending] (first cell is cell array)
 % 
@@ -34,7 +35,7 @@ function output = par2onsets(parFile, column_names,varargin)
 % columns. also if 'durations' is not listed in column_names, durations
 % will be calculated by the sorted difference across onsets.
 %
-% Ex of use: par2onsets({'epi01.par','epi02.par'},'durations','specialCode','output','epi_sots',...
+% Ex of use: par2onsets({'epi01.par','epi02.par'},{'onsets','codes','names'},'durations','specialCode','output','epi_sots',...
 %  'runDuration', 259)
 % Created by Justin Theiss
 
@@ -67,6 +68,7 @@ end
 if any(strcmp(varargin, 'names')), 
     names = varargin{find(strcmp(varargin,'names'),1)+1};
 end
+runDuration=0;
 if any(strcmp(varargin, 'runDuration')), 
     runDuration = varargin{find(strcmp(varargin,'runDuration'),1)+1};
 end
