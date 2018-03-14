@@ -4,13 +4,17 @@ function maskNii = create_ROI_inplane_mask(inplanePath, roiPath)
 % inplane mask restricted to the ROI
 %
 % inplanePath - the nifti inplane(gems) file path
-% roiPath - a .mat ROI file path
+% roiPath - a .mat ROI file path - it is a set of coords refering to 
+% voxels in the inplane (following inplane conventions)
 %
 % maskNii is the nifti file of the inplane mask restricted to the ROI
 % ------------------------------------------------------------------------
 
-    if(~exist(inplanePath) || ~exist(roiPath))
-        erri('Not enough info to create nifti inplane mask for ROI');
+% IMPORTANT NOTES: we may want to update that function to work like
+% create_ROI_volume_mask works
+
+    if(~exist(inplanePath,'file')) || (~exist(roiPath,'file'))
+        error('Not enough info to create nifti inplane mask for ROI');
     end
 
 % create new nifti file for mask in maskPath
@@ -33,7 +37,7 @@ function maskNii = create_ROI_inplane_mask(inplanePath, roiPath)
 
 % save mask in file
     [p,n,e]  = fileparts(inplanePath);
-    maskPath = fullfile(p,strcat('ROI_inplane_mask',e));
+    maskPath = fullfile(p,'ROI_inplane_mask.nii');
     niftiWrite(maskNii, maskPath); 
 
 end
