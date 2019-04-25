@@ -1,4 +1,13 @@
-function output = par2onsets(parFile, column_names,varargin)
+function output = par2onsets2(parFile, column_names,varargin)
+% This is a simpler version of par2onsets.
+% The goal is to use par2onsets on all par files in the current folder
+% as an equivalent of
+% par2onsets('epi01.par',{'onsets','codes','names'},'durations','specialCode','output','sots_epi01')
+% for each of these files.
+% Simply run par2onsets2 with no argument in the folder where the PAR files
+% are stored
+
+% old usage:
 % filename = par2onsets(parFile,'param1','value1','param2','value2',...)
 % Create onsets (.mat) file from par (.par) file (but any text file should 
 % work). The onsets file can be used in SPM software. Durations certainly need to be provided
@@ -37,9 +46,22 @@ function output = par2onsets(parFile, column_names,varargin)
 %
 % Ex of use: par2onsets({'epi01.par','epi02.par'},{'onsets','codes','names'},'durations','specialCode','output','epi_sots',...
 %  'runDuration', 259)
-% Our usage is
-%   par2onsets({'epi01.par','epi02.par',...},{'onsets','codes','names'},'durations','specialCode','output',{'sots_epi01','sots_epi02'})
 % Created by Justin Theiss
+
+% THIS PART IS THE ADDED PART FOR par2onsets2
+if nargin==0
+    listPAR =list_files(cd,'*.par');
+    if isempty(listPAR)
+        disp('No PAR files found')
+    else
+        disp(listPAR)
+    end
+    for i=1:numel(listPAR)
+        [b,epiname]=fileparts(listPAR{i});
+        par2onsets(listPAR{i},{'onsets','codes','names'},'durations','specialCode','output',['sots_',epiname])
+    end
+else
+% END OF ADDED PART
 
 % set column names
 if exist('column_names','var')==0;
@@ -149,7 +171,7 @@ end
 %save file
 save(output, 'onsets', 'durations', 'names');
 end
-
+end
 
 function lines=extractFile(parFile, startTime,onsets_idx)
 

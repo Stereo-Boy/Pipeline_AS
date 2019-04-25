@@ -1,6 +1,6 @@
 function maskNii = create_ROI_volume_mask(volumePath, roiPath)
 % ------------------------------------------------------------------------
-% Take an nifti volume file and a ROI .mat file and create a spm-like 
+% Take a nifti volume file and a ROI.mat file and create a spm-like 
 % volume mask restricted to the ROI
 %
 % volumePath - the nifti volume(anatomical) file path
@@ -36,8 +36,9 @@ function maskNii = create_ROI_volume_mask(volumePath, roiPath)
 % save mask in file
     %p  = fileparts(volumePath);
     %maskPath = fullfile(p,'ROI_volume_mask.nii');
-    maskNii.fname='ROI_volume_mask.nii';
-    spm_write_vol(maskNii,maskNii.data)
+    [path_roi,roiMask]=fileparts(roiPath);
+    maskNii.fname=fullfile(path_roi,['ROI_',roiMask,'.nii']);
+    spm_write_vol(maskNii,maskNii.data);
     %niftiWrite(maskNii, maskPath); 
     %save_nii(maskNii, maskNii.fname); 
 

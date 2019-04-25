@@ -12,7 +12,7 @@ if nbArg>0
     string=[];
     for i=1:nbArg
         if strcmpi(varargin{i},'verboseOFF')
-           warning(' ')
+%           warning(' ')
            return 
         elseif strcmpi(varargin{i},'verboseON')
             %do nothing
