@@ -14,7 +14,7 @@ function extractPARfile5(stamFile, rootName, excludeNthRun, startCounter, invert
 % YOU NEED TO CD IN THE STAM DIRECTORY FIRST
 % stamfile is the file with the stimuli matrix
 % rootName is the root from which are par file names generated
-% Ex of use: extractPARfile2('mv40pre10_MRI_1.mat','epi') will read
+% Ex of use: extractPARfile5('mv40pre10_MRI_1.mat','epi') will read
 % mv40pre10_MRI_1.mat and generate par files called epi01, epi02...
 % excludeNthRun is a vector of runs number to exclude - the number is the n_th in the stam file, not the actual run nb in the stam file
 % when running pre2, if you want the epi names to start at a different number so that they match the par files
